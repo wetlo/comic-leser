@@ -2,9 +2,11 @@
 	import Router from "svelte-spa-router";
 	import Imageviewer from "./routes/imageviewer.svelte";
 	import Test from "./routes/test.svelte";
+	import Cbzviewer from "./routes/cbzviewer.svelte";
 
 	const routes = {
-		"/": Imageviewer,
+		"/": Cbzviewer,
+		"/img": Imageviewer,
 		"/test": Test,
 	};
 </script>
