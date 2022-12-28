@@ -22,6 +22,15 @@ url = "2.2.2"
 percent-encoding = "2.1.0"
 zip = "0.6.2"
 
+anyhow = "1.0.58"
+
+lazy_static = "1.4.0"
+itertools = "0.10"
+
+rusqlite = { version = "0.28.0", features = ["bundled"] }
+rusqlite_migration = "1.0.0"
+regex = "1.7.0"
+
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL

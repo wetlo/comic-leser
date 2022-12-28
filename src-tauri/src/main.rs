@@ -1,3 +1,7 @@
+#![feature(is_some_with)]
+#![feature(try_blocks)]
+#![feature(once_cell)]
+#![feature(iterator_try_collect)]
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
@@ -10,6 +14,8 @@ use tauri::{
     AppHandle, Runtime,
 };
 use url::Url;
+
+mod library;
 
 fn image_format<P: AsRef<Path>>(path: P) -> Option<&'static str> {
     let accepted_formats = ["png", "jpg", "jpeg"];
@@ -87,10 +93,14 @@ fn get_comic_page<R: Runtime>(
         .body(content)
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
+    let _library = library::Library::new("/media/manga/")?;
+
     tauri::Builder::default()
         .register_uri_scheme_protocol("image", get_image)
         .register_uri_scheme_protocol("comic", get_comic_page)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    Ok(())
 }
