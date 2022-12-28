@@ -15,6 +15,7 @@ pub struct Library {
     database: Database,
     pub path: PathBuf,
     pub is_manga_db: bool,
+    pub comics: Vec<Comic>,
 }
 
 static CHAPTER_NUMBER_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
@@ -36,38 +37,83 @@ impl Library {
         let database = Database::new(db_path)?;
 
         let mut library = Self {
-            database,
+            comics: database.comics()?,
             is_manga_db: true,
             path: path.as_ref().into(),
+            database,
         };
 
-        let comics = library.scan_library()?;
-        dbg!(comics);
+        dbg!(&library.comics);
+
+        if library.comics.is_empty() {
+            library.update()?;
+        }
 
         Ok(library)
     }
 
-    fn scan_library(&mut self) -> Result<Vec<Comic>> {
-        let comics: Vec<_> = read_entries_with_file_type(&self.path, |_| true, |t| t.is_dir())?
+    fn update(&mut self) -> Result<()> {
+        let scanned_comics = self.scan()?;
+        dbg!(&scanned_comics);
+
+        let mut new_comics = vec![];
+        let mut new_chapters = vec![];
+
+        for c in scanned_comics {
+            let lib_comic = self
+                .comics
+                .iter()
+                .filter(|l| &l.dir_path == &c.dir_path)
+                .next();
+
+            if lib_comic.is_some() {
+                new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap().id, c)?)
+            } else {
+                new_comics.push(c)
+            }
+        }
+
+        self.database.insert_comics(&new_comics)?; // add the new comic
+        self.database.insert_chapters(&new_chapters, None)?;
+
+        Ok(())
+    }
+
+    fn get_new_chaps_for(&self, comic_id: u32, scanned: Comic) -> Result<Vec<Chapter>> {
+        let db_chaps = self.database.comic_with_chapters(comic_id)?.chapters;
+
+        let new = scanned
+            .chapters
+            .into_iter()
+            .filter(|c| !db_chaps.iter().any(|d| d.path == c.path))
+            .collect_vec();
+
+        Ok(new)
+    }
+
+    fn scan(&mut self) -> Result<Vec<Comic>> {
+        let comics = read_entries_with_file_type(&self.path, |_| true, |t| t.is_dir())?
+            // only use entries with valid paths
             .filter_map(|d| Some(d.ok()?.path()))
+            // create comic from entry
             .map(|d| Comic {
                 id: 0,
                 name: d
                     .file_name()
                     .map_or(String::from(""), |n| n.to_string_lossy().to_string()),
                 chapters: self
-                    .scan_comic_directory(&d, 0, 1)
+                    .scan_chapters(&d, 0, 1)
                     .expect("couldn't read comic chapters"),
                 is_manga: self.is_manga_db,
                 cover_path: None,
                 dir_path: d,
             })
-            .collect();
+            .collect_vec();
 
         Ok(comics)
     }
 
-    fn scan_comic_directory<P: AsRef<Path>>(
+    fn scan_chapters<P: AsRef<Path>>(
         &self,
         path: P,
         comic_id: u32,
