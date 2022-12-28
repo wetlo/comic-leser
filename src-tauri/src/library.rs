@@ -7,41 +7,15 @@ use std::{
 use anyhow::Result;
 use itertools::Itertools;
 
-use rusqlite::Connection;
-use rusqlite_migration::{Migrations, M};
+use crate::db::Database;
+use crate::entities::{Chapter, Comic};
 
 #[derive(Debug)]
 pub struct Library {
-    connection: Connection,
+    database: Database,
     pub path: PathBuf,
     pub is_manga_db: bool,
 }
-
-#[derive(Debug)]
-pub struct Comic {
-    pub id: u32,
-    pub dir_path: PathBuf,
-    pub name: String,
-    pub cover_path: Option<PathBuf>,
-    pub is_manga: bool,
-
-    pub chapters: Vec<Chapter>,
-}
-
-#[derive(Debug)]
-pub struct Chapter {
-    pub id: u32,
-    pub path: PathBuf,
-    pub chapter_number: Option<u32>,
-
-    pub read: u32,
-    pub pages: u32,
-
-    pub comic_id: u32,
-}
-
-static MIGRATIONS: LazyLock<Migrations<'static>> =
-    LazyLock::new(|| Migrations::new(vec![M::up(include_str!("sql/initial-migration.sql"))]));
 
 static CHAPTER_NUMBER_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::Regex::new(r"(\d+)\.?|\.?(\d+)").expect("invalid chapter number regex")
@@ -59,36 +33,22 @@ impl std::fmt::Display for NoFilePathToSqlite {
 impl Library {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let db_path = path.as_ref().join(".comicdb");
-        let connection = Connection::open(db_path)?;
+        let database = Database::new(db_path)?;
 
         let mut library = Self {
-            connection,
+            database,
             is_manga_db: true,
             path: path.as_ref().into(),
         };
 
-        library.create_db()?;
         let comics = library.scan_library()?;
         dbg!(comics);
 
         Ok(library)
     }
 
-    fn create_db(&mut self) -> Result<()> {
-        MIGRATIONS
-            .to_latest(&mut self.connection)
-            .map_err(|e| e.into())
-    }
-
     fn scan_library(&mut self) -> Result<Vec<Comic>> {
-        let dir_path = self
-            .connection
-            .path()
-            .and_then(|p| p.parent())
-            .ok_or(NoFilePathToSqlite)?;
-        dbg!(&dir_path);
-
-        let comics: Vec<_> = read_entries_with_file_type(dir_path, |_| true, |t| t.is_dir())?
+        let comics: Vec<_> = read_entries_with_file_type(&self.path, |_| true, |t| t.is_dir())?
             .filter_map(|d| Some(d.ok()?.path()))
             .map(|d| Comic {
                 id: 0,
@@ -130,7 +90,7 @@ impl Library {
             let c = Chapter {
                 id: 0,
                 path: p,
-                chapter_number: Some(chap_num),
+                chapter_number: chap_num,
                 read: 0,
                 pages: 0, // TODO: read chapters from cbz
                 comic_id,
@@ -176,14 +136,4 @@ where
     });
 
     Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn migrations_test() {
-        MIGRATIONS.validate().unwrap();
-    }
 }

@@ -15,6 +15,8 @@ use tauri::{
 };
 use url::Url;
 
+mod db;
+mod entities;
 mod library;
 
 fn image_format<P: AsRef<Path>>(path: P) -> Option<&'static str> {

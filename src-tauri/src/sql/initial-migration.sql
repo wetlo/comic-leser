@@ -9,21 +9,15 @@ CREATE TABLE comic (
     dir_path TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
 
-    library_id INTEGER NOT NULL,
-
     cover_path TEXT,
 
-    is_manga BOOLEAN,
-
-    FOREIGN KEY (library_id)
-    REFERENCES library (id)
-	ON DELETE CASCADE
+    is_manga BOOLEAN NOT NULL
 );
 
 CREATE TABLE chapter (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     file_path TEXT NOT NULL UNIQUE,
-    chapter_number INTEGER,
+    chapter_number INTEGER NOT NULL,
 
     read INTEGER DEFAULT 0 NOT NULL,
     pages INTEGER NOT NULL,
