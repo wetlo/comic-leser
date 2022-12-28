@@ -13,15 +13,15 @@ pub struct Database {
     conn: Connection,
 }
 
-const COMIC_QUERY: &'static str = "SELECT id, dir_path, name, cover_path, is_manga FROM comic";
-const COMIC_QUERY_ID: &'static str =
+const COMIC_QUERY: &str = "SELECT id, dir_path, name, cover_path, is_manga FROM comic";
+const COMIC_QUERY_ID: &str =
     "SELECT id, dir_path, name, cover_path, is_manga FROM comic WHERE id = (?1)";
-const COMIC_INSERT: &'static str =
+const COMIC_INSERT: &str =
     "INSERT INTO comic (dir_path, name, cover_path, is_manga) VALUES (?1, ?2, ?3, ?4)";
 
-const CHAPTER_QUERY: &'static str =
+const CHAPTER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1)";
-const CHAPTER_INSERT: &'static str =
+const CHAPTER_INSERT: &str =
     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id) VALUES (?1, ?2, ?3, ?4, ?5)";
 
 impl Database {
@@ -32,7 +32,7 @@ impl Database {
         Ok(Self { conn })
     }
 
-    fn from_conn(mut conn: Connection) -> anyhow::Result<Self> {
+    fn _from_conn(mut conn: Connection) -> anyhow::Result<Self> {
         MIGRATIONS.to_latest(&mut conn)?;
 
         Ok(Self { conn })
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn add_comics() -> Result<()> {
         let conn = Connection::open_in_memory()?;
-        let db = Database::from_conn(conn)?;
+        let mut db = Database::_from_conn(conn)?;
 
         let comics = [
             Comic {

@@ -1,4 +1,5 @@
 use std::{
+    fs::File,
     fs::{DirEntry, FileType},
     path::{Path, PathBuf},
     sync::LazyLock,
@@ -45,26 +46,21 @@ impl Library {
 
         dbg!(&library.comics);
 
-        if library.comics.is_empty() {
-            library.update()?;
-        }
+        library.update()?;
 
         Ok(library)
     }
 
+    /// scan the library directory for new comics/chapters and update the database
     fn update(&mut self) -> Result<()> {
+        // TODO: handle deletion
         let scanned_comics = self.scan()?;
-        dbg!(&scanned_comics);
 
         let mut new_comics = vec![];
         let mut new_chapters = vec![];
 
         for c in scanned_comics {
-            let lib_comic = self
-                .comics
-                .iter()
-                .filter(|l| &l.dir_path == &c.dir_path)
-                .next();
+            let lib_comic = self.comics.iter().find(|l| l.dir_path == c.dir_path);
 
             if lib_comic.is_some() {
                 new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap().id, c)?)
@@ -79,6 +75,7 @@ impl Library {
         Ok(())
     }
 
+    /// compare the db chapters of a comic and the scanned chapter to get the new chapters
     fn get_new_chaps_for(&self, comic_id: u32, scanned: Comic) -> Result<Vec<Chapter>> {
         let db_chaps = self.database.comic_with_chapters(comic_id)?.chapters;
 
@@ -91,8 +88,9 @@ impl Library {
         Ok(new)
     }
 
+    /// scan the comic directory, to get every comic + chapter inside
     fn scan(&mut self) -> Result<Vec<Comic>> {
-        let comics = read_entries_with_file_type(&self.path, |_| true, |t| t.is_dir())?
+        let comics = read_entries_with_file_type(&self.path, is_not_hidden, |t| t.is_dir())?
             // only use entries with valid paths
             .filter_map(|d| Some(d.ok()?.path()))
             // create comic from entry
@@ -113,6 +111,7 @@ impl Library {
         Ok(comics)
     }
 
+    /// get the chapters inside a comic directory
     fn scan_chapters<P: AsRef<Path>>(
         &self,
         path: P,
@@ -122,11 +121,7 @@ impl Library {
         let mut chap_num = chapter_number;
         let chaps = read_entries_with_file_type(
             path,
-            |f| {
-                f.path()
-                    .extension()
-                    .is_some_and(|e| e.to_string_lossy() == "cbz")
-            },
+            |f| f.extension().is_some_and(|e| e.to_string_lossy() == "cbz"),
             |t| t.is_file(),
         )?
         .map(|r| r.unwrap().path())
@@ -135,10 +130,10 @@ impl Library {
         .map(|p| {
             let c = Chapter {
                 id: 0,
+                pages: zip::ZipArchive::new(File::open(&p).unwrap()).unwrap().len() as u32,
                 path: p,
                 chapter_number: chap_num,
                 read: 0,
-                pages: 0, // TODO: read chapters from cbz
                 comic_id,
             };
             chap_num += 1;
@@ -149,6 +144,8 @@ impl Library {
         Ok(chaps)
     }
 
+    /// parse the chapter number from the chapter location
+    /// this also handles in between chapters like 10.5
     fn chapter_number_from_path(&self, path: &Path) -> Vec<u32> {
         let name = path.file_stem().unwrap_or_default().to_string_lossy();
         let num_matches = CHAPTER_NUMBER_REGEX
@@ -170,16 +167,23 @@ fn read_entries_with_file_type<P, FT, FE>(
 where
     P: AsRef<Path>,
     FT: Fn(&FileType) -> bool + Copy,
-    FE: Fn(&DirEntry) -> bool + Copy,
+    FE: Fn(&Path) -> bool + Copy,
 {
     let entries = std::fs::read_dir(path)?;
 
     let result = entries.filter(move |f| {
         f.as_ref()
             .ok()
-            .and_then(|f| Some((f, f.file_type().ok()?)))
+            .and_then(|f| Some((f.path(), f.file_type().ok()?)))
             .is_some_and(|(f, t)| pred_type(t) && pred_entry(f))
     });
 
     Ok(result)
+}
+
+fn is_not_hidden(entry: &Path) -> bool {
+    entry
+        .file_name()
+        .and_then(|n| n.to_string_lossy().chars().next())
+        .is_some_and(|c| *c != '.')
 }
