@@ -62,8 +62,9 @@ impl Database {
         Ok(comic)
     }
 
-    pub fn insert_comics(&self, comics: &[Comic]) -> Result<()> {
-        let mut insert = self.conn.prepare(COMIC_INSERT)?;
+    pub fn insert_comics(&mut self, comics: &[Comic]) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        let mut insert = tx.prepare(COMIC_INSERT)?;
 
         for c in comics {
             let id = insert.insert(params![
@@ -73,14 +74,28 @@ impl Database {
                 c.is_manga,
             ])?;
 
-            self.insert_chapters(&c.chapters, Some(id as u32))?;
+            Self::insert_chapters_transaction(&tx, &c.chapters, Some(id as u32))?;
         }
+
+        drop(insert);
+        tx.commit()?;
 
         Ok(())
     }
 
-    pub fn insert_chapters(&self, chapters: &[Chapter], comic_id: Option<u32>) -> Result<()> {
-        let mut insert = self.conn.prepare(CHAPTER_INSERT)?;
+    pub fn insert_chapters(&mut self, chapters: &[Chapter], comic_id: Option<u32>) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        Self::insert_chapters_transaction(&tx, chapters, comic_id)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    fn insert_chapters_transaction(
+        tx: &rusqlite::Transaction,
+        chapters: &[Chapter],
+        comic_id: Option<u32>,
+    ) -> Result<()> {
+        let mut insert = tx.prepare(CHAPTER_INSERT)?;
 
         for c in chapters {
             let comic = comic_id.unwrap_or(c.comic_id);
