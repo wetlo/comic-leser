@@ -7,17 +7,28 @@
     windows_subsystem = "windows"
 )]
 
-use std::{error::Error, fs::File, io::BufReader, io::Read, path::Path};
+use std::{
+    error::Error,
+    fs::File,
+    io::BufReader,
+    io::Read,
+    path::Path,
+    sync::{Arc, Mutex},
+};
 
+use entities::Comic;
+use library::Library;
 use tauri::{
     http::{self, ResponseBuilder},
-    AppHandle, Runtime,
+    AppHandle, Runtime, State,
 };
 use url::Url;
 
 mod db;
 mod entities;
 mod library;
+
+struct LibState(Arc<Mutex<Library>>);
 
 fn get_comic_page<R: Runtime>(
     _app: &AppHandle<R>,
@@ -54,11 +65,19 @@ fn get_comic_page<R: Runtime>(
         .body(content)
 }
 
+#[tauri::command]
+fn all_comics(library: State<'_, LibState>) -> Vec<Comic> {
+    library.0.lock().unwrap().comics.clone()
+}
+
 fn main() -> anyhow::Result<()> {
-    let _library = library::Library::new("/media/manga/")?;
+    let library = library::Library::new("/media/manga/")?;
+    let state = Arc::new(Mutex::new(library));
 
     tauri::Builder::default()
+        .manage(LibState(state))
         .register_uri_scheme_protocol("comic", get_comic_page)
+        .invoke_handler(tauri::generate_handler![all_comics])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
