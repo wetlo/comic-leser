@@ -69,6 +69,13 @@ impl Library {
             }
         }
 
+        // only get the page count when the chapter is new
+        for c in new_chapters.iter_mut() {
+            c.pages = zip::ZipArchive::new(File::open(&c.path).unwrap())
+                .unwrap()
+                .len() as u32;
+        }
+
         self.database.insert_comics(&new_comics)?; // add the new comic
         self.database.insert_chapters(&new_chapters, None)?;
 
@@ -130,7 +137,7 @@ impl Library {
         .map(|p| {
             let c = Chapter {
                 id: 0,
-                pages: zip::ZipArchive::new(File::open(&p).unwrap()).unwrap().len() as u32,
+                pages: 0,
                 path: p,
                 chapter_number: chap_num,
                 read: 0,
