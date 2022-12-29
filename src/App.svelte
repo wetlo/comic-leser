@@ -1,12 +1,10 @@
 <script lang="ts">
 	import Router from "svelte-spa-router";
-	import Imageviewer from "./routes/imageviewer.svelte";
 	import Test from "./routes/test.svelte";
 	import Cbzviewer from "./routes/cbzviewer.svelte";
 
 	const routes = {
 		"/": Cbzviewer,
-		"/img": Imageviewer,
 		"/test": Test,
 	};
 </script>
