@@ -70,6 +70,11 @@ fn all_comics(library: State<'_, LibState>) -> Vec<Comic> {
     library.0.lock().unwrap().comics.clone()
 }
 
+#[tauri::command]
+fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Option<Comic> {
+    library.0.lock().ok()?.comic_with_chapters(id)
+}
+
 fn main() -> anyhow::Result<()> {
     let library = library::Library::new("/media/manga/")?;
     let state = Arc::new(Mutex::new(library));
@@ -77,7 +82,7 @@ fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .manage(LibState(state))
         .register_uri_scheme_protocol("comic", get_comic_page)
-        .invoke_handler(tauri::generate_handler![all_comics])
+        .invoke_handler(tauri::generate_handler![all_comics, comic_with_chapters])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

@@ -11,7 +11,7 @@
 {:then cs}
     <ul>
         {#each cs as c}
-            <li>{c.name}</li>
+            <li><a href="#/detail/{c.id}">{c.name}</a></li>
         {/each}
     </ul>
 {/await}

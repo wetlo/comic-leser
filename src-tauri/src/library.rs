@@ -51,6 +51,10 @@ impl Library {
         Ok(library)
     }
 
+    pub fn comic_with_chapters(&self, comic_id: u32) -> Option<Comic> {
+        self.database.comic_with_chapters(comic_id).ok()
+    }
+
     /// scan the library directory for new comics/chapters and update the database
     fn update(&mut self) -> Result<()> {
         // TODO: handle deletion

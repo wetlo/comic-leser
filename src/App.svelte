@@ -3,9 +3,11 @@
 	import Test from "./routes/test.svelte";
 	import Cbzviewer from "./routes/cbzviewer.svelte";
 	import Library from "./routes/library.svelte";
+	import ComicDetail from "./routes/comic_detail.svelte";
 
 	const routes = {
 		"/": Library,
+		"/detail/:id": ComicDetail,
 		"/reader": Cbzviewer,
 		"/test": Test,
 	};

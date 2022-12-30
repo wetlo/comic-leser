@@ -20,7 +20,7 @@ const COMIC_INSERT: &str =
     "INSERT INTO comic (dir_path, name, cover_path, is_manga) VALUES (?1, ?2, ?3, ?4)";
 
 const CHAPTER_QUERY: &str =
-    "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1)";
+    "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
 const CHAPTER_INSERT: &str =
     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id) VALUES (?1, ?2, ?3, ?4, ?5)";
 
