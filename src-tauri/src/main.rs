@@ -1,4 +1,4 @@
-#![feature(is_some_with)]
+#![feature(is_some_and)]
 #![feature(try_blocks)]
 #![feature(once_cell)]
 #![feature(iterator_try_collect)]

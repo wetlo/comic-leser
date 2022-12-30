@@ -194,7 +194,7 @@ where
         f.as_ref()
             .ok()
             .and_then(|f| Some((f.path(), f.file_type().ok()?)))
-            .is_some_and(|(f, t)| pred_type(t) && pred_entry(f))
+            .is_some_and(|(f, t)| pred_type(&t) && pred_entry(&f))
     });
 
     Ok(result)
@@ -204,5 +204,5 @@ fn is_not_hidden(entry: &Path) -> bool {
     entry
         .file_name()
         .and_then(|n| n.to_string_lossy().chars().next())
-        .is_some_and(|c| *c != '.')
+        .is_some_and(|c| c != '.')
 }
