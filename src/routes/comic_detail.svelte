@@ -19,7 +19,11 @@
         </tr>
         {#each comic.chapters as c}
             <tr>
-                <td><a href="#/reader?path={c.path}">{c.path}</a></td>
+                <td>
+                    <a href="#/reader/{c.comic_id}/{c.chapter_number}"
+                        >{c.path}</a
+                    >
+                </td>
                 <td>{c.read} / {c.pages}</td>
             </tr>
         {/each}

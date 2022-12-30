@@ -1,33 +1,54 @@
 <script lang="ts">
-    import { open } from "@tauri-apps/api/dialog";
-    import { querystring } from "svelte-spa-router";
-    let params = new URLSearchParams($querystring);
-    let path = params.get("path");
+    import { invoke } from "@tauri-apps/api/tauri";
+    import type { Chapter } from "../entities/Chapter";
 
+    //import { querystring } from "svelte-spa-router";
+    interface Params {
+        comic: string;
+        chapter: string;
+    }
+
+    export let params: Params;
+
+    const comicId = parseInt(params.comic);
+    let chapterNumber = parseInt(params.chapter);
+
+    let chapter: Chapter | undefined;
+    let wentBack: boolean = false;
     let page = 1;
 
-    let choose = () =>
-        open({
-            multiple: false,
-            filters: [
-                {
-                    name: "Comic",
-                    extensions: ["cbz"],
-                },
-            ],
-        })
-            .then((s) => (Array.isArray(s) ? s[0] : s))
-            .then((p) => (path = p));
+    $: invoke("chapter", { comicId, chapterNumber }).then((c) => {
+        chapter = c as Chapter;
+    });
+
+    $: {
+        page = wentBack ? chapter.pages : page;
+        // reset wentBack after the chapter has been loaded and pagenumber has been updated
+        if (chapterNumber == chapter?.chapter_number) wentBack = false;
+    }
 
     function onKeypress(e: KeyboardEvent) {
         switch (e.key) {
             case "ArrowLeft":
                 window.scrollTo(0, 0);
                 page += 1;
+
+                if (page > chapter.pages) {
+                    page = 1;
+                    chapterNumber += 1;
+                }
                 break;
             case "ArrowRight":
-                window.scrollTo(0, 0);
                 page -= 1;
+                if (page > 0 || chapterNumber > 1)
+                    window.scrollTo(0, document.body.scrollHeight);
+                if (page <= 0) {
+                    if (chapterNumber > 1) {
+                        chapterNumber -= 1;
+                        wentBack = true;
+                    }
+                    page = 1;
+                }
                 break;
         }
     }
@@ -35,9 +56,12 @@
 
 <svelte:window on:keydown={onKeypress} />
 
-{#if path}
-    <p>{path}</p>
-    <img alt="comic page" src={`comic://localhost${path}?page=${page}`} />
+{#if chapter}
+    <p>{chapter.path}</p>
+    <img
+        alt="comic page"
+        src={`comic://localhost${chapter.path}?page=${page}`}
+    />
 {:else}
-    <button on:click={choose}>Choose comic</button>
+    loading
 {/if}

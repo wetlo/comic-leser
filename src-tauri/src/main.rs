@@ -16,7 +16,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use entities::Comic;
+//use anyhow::Result;
+use entities::{Chapter, Comic};
 use library::Library;
 use tauri::{
     http::{self, ResponseBuilder},
@@ -34,7 +35,7 @@ fn get_comic_page<R: Runtime>(
     _app: &AppHandle<R>,
     req: &http::Request,
 ) -> Result<http::Response, Box<dyn Error>> {
-    let uri = Url::parse(dbg!(req.uri()))?;
+    let uri = Url::parse(req.uri())?;
 
     let path = percent_encoding::percent_decode_str(uri.path()).decode_utf8()?;
 
@@ -71,8 +72,27 @@ fn all_comics(library: State<'_, LibState>) -> Vec<Comic> {
 }
 
 #[tauri::command]
-fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Option<Comic> {
-    library.0.lock().ok()?.comic_with_chapters(id)
+fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .comic_with_chapters(id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn chapter(
+    comic_id: u32,
+    chapter_number: u32,
+    library: State<'_, LibState>,
+) -> Result<Chapter, String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .chapter_by_order(comic_id, chapter_number)
+        .map_err(|e| e.to_string())
 }
 
 fn main() -> anyhow::Result<()> {
@@ -82,7 +102,11 @@ fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .manage(LibState(state))
         .register_uri_scheme_protocol("comic", get_comic_page)
-        .invoke_handler(tauri::generate_handler![all_comics, comic_with_chapters])
+        .invoke_handler(tauri::generate_handler![
+            all_comics,
+            comic_with_chapters,
+            chapter
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

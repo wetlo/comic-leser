@@ -51,8 +51,16 @@ impl Library {
         Ok(library)
     }
 
-    pub fn comic_with_chapters(&self, comic_id: u32) -> Option<Comic> {
-        self.database.comic_with_chapters(comic_id).ok()
+    pub fn comic_with_chapters(&self, comic_id: u32) -> Result<Comic> {
+        self.database
+            .comic_with_chapters(comic_id)
+            .map_err(|e| e.into())
+    }
+
+    pub fn chapter_by_order(&self, comic_id: u32, chapter_number: u32) -> Result<Chapter> {
+        self.database
+            .chapter_by_number(comic_id, chapter_number)
+            .map_err(|e| e.into())
     }
 
     /// scan the library directory for new comics/chapters and update the database

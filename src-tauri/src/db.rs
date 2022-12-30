@@ -21,6 +21,8 @@ const COMIC_INSERT: &str =
 
 const CHAPTER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
+const CHAPTER_ORDER_QUERY: &str =
+    "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
 const CHAPTER_INSERT: &str =
     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id) VALUES (?1, ?2, ?3, ?4, ?5)";
 
@@ -60,6 +62,14 @@ impl Database {
         comic.chapters = chaps;
 
         Ok(comic)
+    }
+
+    pub fn chapter_by_number(&self, comic_id: u32, chapter_number: u32) -> Result<Chapter> {
+        self.conn.query_row(
+            CHAPTER_ORDER_QUERY,
+            [comic_id, chapter_number],
+            chapter_from_row,
+        )
     }
 
     pub fn insert_comics(&mut self, comics: &[Comic]) -> Result<()> {
