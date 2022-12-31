@@ -25,6 +25,10 @@
 		margin: 0 auto;
 	}
 
+	:root {
+		background-color: #171717;
+	}
+
 	@media (min-width: 640px) {
 		main {
 			max-width: none;

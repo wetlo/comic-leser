@@ -1,5 +1,6 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/tauri";
+    import { Loading } from "attractions";
     import type { Chapter } from "../entities/Chapter";
 
     //import { querystring } from "svelte-spa-router";
@@ -63,5 +64,5 @@
         src={`comic://localhost${chapter.path}?page=${page}`}
     />
 {:else}
-    loading
+    <Loading />
 {/if}
