@@ -70,14 +70,19 @@ impl Library {
         }
 
         // only get the page count when the chapter is new
-        for c in new_chapters.iter_mut() {
+        let chaps_from_new_comics = new_comics.iter_mut().flat_map(|c| c.chapters.iter_mut());
+        for c in new_chapters.iter_mut().chain(chaps_from_new_comics) {
             c.pages = zip::ZipArchive::new(File::open(&c.path).unwrap())
                 .unwrap()
                 .len() as u32;
         }
 
+        dbg!(&new_chapters);
+
         self.database.insert_comics(&new_comics)?; // add the new comic
         self.database.insert_chapters(&new_chapters, None)?;
+
+        self.comics = self.database.comics()?;
 
         Ok(())
     }
