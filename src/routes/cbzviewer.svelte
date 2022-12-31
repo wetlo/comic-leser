@@ -16,15 +16,15 @@
     let chapterNumber = parseInt(params.chapter);
 
     let chapter: Chapter | undefined;
+    let chapterPromise: Promise<Chapter>;
     let wentBack: boolean = false;
     // begin on the page if it is given as a parameter
     let page = params.page ? parseInt(params.page) : 1;
 
     // get the new chapter when the number updates
-    $: invoke("chapter", { comicId, chapterNumber }).then((c) => {
-        chapter = c as Chapter;
-        console.log(chapter);
-    });
+    $: chapterPromise = invoke("chapter", { comicId, chapterNumber }).then(
+        (c) => c as Chapter
+    );
 
     $: {
         page = wentBack ? chapter.pages : page;
@@ -34,7 +34,8 @@
 
     // update the read status when we progress on a chapter
     // TODO: maybe merge with other reactive thingy
-    $: if (page > chapter?.read)
+    // make sure the chapter is already loaded
+    $: if (chapterNumber == chapter?.chapter_number && page > chapter?.read)
         invoke("chapter_page_update", { id: chapter.id, page });
 
     function onKeypress(e: KeyboardEvent) {
@@ -62,16 +63,22 @@
                 break;
         }
     }
+
+    // TODO: find replacement for this hack
+    function setChapter(c: Chapter) {
+        chapter = c;
+    }
 </script>
 
 <svelte:window on:keydown={onKeypress} />
 
-{#if chapter}
+{#await chapterPromise}
+    <Loading />
+{:then chapter}
+    {setChapter(chapter)}
     <p>{chapter.path}</p>
     <img
         alt="comic page"
         src={`comic://localhost${chapter.path}?page=${page}`}
     />
-{:else}
-    <Loading />
-{/if}
+{/await}

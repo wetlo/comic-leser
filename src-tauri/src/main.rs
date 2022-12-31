@@ -88,7 +88,6 @@ fn chapter(
     chapter_number: u32,
     library: State<'_, LibState>,
 ) -> Result<Chapter, String> {
-    dbg!("called chapter", chapter_number);
     library
         .0
         .lock()
