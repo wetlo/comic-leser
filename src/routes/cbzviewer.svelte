@@ -67,6 +67,7 @@
     // TODO: find replacement for this hack
     function setChapter(c: Chapter) {
         chapter = c;
+        return "";
     }
 </script>
 
@@ -81,4 +82,25 @@
         alt="comic page"
         src={`comic://localhost${chapter.path}?page=${page}`}
     />
+
+    <img
+        alt="comic page"
+        src={`comic://localhost${chapter.path}?page=${page + 1}`}
+        class="cache"
+    />
 {/await}
+
+<style>
+    img {
+        max-width: 100%;
+    }
+
+    .cache {
+        position: fixed;
+        top: 50vh;
+        left: 50vw;
+        z-index: -100;
+        height: 1px;
+        width: 1px;
+    }
+</style>
