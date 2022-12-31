@@ -8,7 +8,7 @@
 	const routes = {
 		"/": Library,
 		"/detail/:id": ComicDetail,
-		"/reader/:comic/:chapter": Cbzviewer,
+		"/reader/:comic/:chapter/:page?": Cbzviewer,
 		"/test": Test,
 	};
 </script>

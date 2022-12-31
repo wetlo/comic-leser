@@ -25,6 +25,7 @@ const CHAPTER_ORDER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
 const CHAPTER_INSERT: &str =
     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id) VALUES (?1, ?2, ?3, ?4, ?5)";
+const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1)";
 
 impl Database {
     pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
@@ -70,6 +71,12 @@ impl Database {
             [comic_id, chapter_number],
             chapter_from_row,
         )
+    }
+
+    pub fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
+        self.conn
+            .execute(CHAPTER_PAGE_UPDATE, [chapter_id, page])
+            .map(|_| ())
     }
 
     pub fn insert_comics(&mut self, comics: &[Comic]) -> Result<()> {

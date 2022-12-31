@@ -7,6 +7,7 @@
     interface Params {
         comic: string;
         chapter: string;
+        page?: string;
     }
 
     export let params: Params;
@@ -16,10 +17,13 @@
 
     let chapter: Chapter | undefined;
     let wentBack: boolean = false;
-    let page = 1;
+    // begin on the page if it is given as a parameter
+    let page = params.page ? parseInt(params.page) : 1;
 
+    // get the new chapter when the number updates
     $: invoke("chapter", { comicId, chapterNumber }).then((c) => {
         chapter = c as Chapter;
+        console.log(chapter);
     });
 
     $: {
@@ -27,6 +31,11 @@
         // reset wentBack after the chapter has been loaded and pagenumber has been updated
         if (chapterNumber == chapter?.chapter_number) wentBack = false;
     }
+
+    // update the read status when we progress on a chapter
+    // TODO: maybe merge with other reactive thingy
+    $: if (page > chapter?.read)
+        invoke("chapter_page_update", { id: chapter.id, page });
 
     function onKeypress(e: KeyboardEvent) {
         switch (e.key) {

@@ -77,6 +77,7 @@ fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comic, S
         .0
         .lock()
         .map_err(|e| e.to_string())?
+        .database
         .comic_with_chapters(id)
         .map_err(|e| e.to_string())
 }
@@ -87,11 +88,24 @@ fn chapter(
     chapter_number: u32,
     library: State<'_, LibState>,
 ) -> Result<Chapter, String> {
+    dbg!("called chapter", chapter_number);
     library
         .0
         .lock()
         .map_err(|e| e.to_string())?
-        .chapter_by_order(comic_id, chapter_number)
+        .database
+        .chapter_by_number(comic_id, chapter_number)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn chapter_page_update(id: u32, page: u32, library: State<'_, LibState>) -> Result<(), String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .database
+        .update_chapter_page(id, page)
         .map_err(|e| e.to_string())
 }
 
@@ -105,7 +119,8 @@ fn main() -> anyhow::Result<()> {
         .invoke_handler(tauri::generate_handler![
             all_comics,
             comic_with_chapters,
-            chapter
+            chapter,
+            chapter_page_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
