@@ -97,3 +97,11 @@ button:focus {
 .space-evenly {
 	justify-content: space-evenly;
 }
+
+.v-center {
+	align-items: center;
+}
+
+.stretch {
+	align-items: stretch;
+}

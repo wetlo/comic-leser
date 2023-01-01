@@ -32,6 +32,7 @@
   "dependencies": {
     "@tauri-apps/api": "^1.0.2",
     "sirv-cli": "^2.0.0",
+    "svelte-feather-icons": "^4.0.0",
     "svelte-spa-router": "^3.2.0"
   }
 }
