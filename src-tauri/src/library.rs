@@ -95,6 +95,11 @@ impl Library {
             .chapters
             .into_iter()
             .filter(|c| !db_chaps.iter().any(|d| d.path == c.path))
+            // add the id of the comic
+            .map(|mut c| {
+                c.comic_id = comic_id;
+                c
+            })
             .collect_vec();
 
         Ok(new)
