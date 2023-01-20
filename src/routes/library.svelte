@@ -23,15 +23,16 @@
     {#await get_comics()}
         loading comics
     {:then cs}
-        <div class="flex space-between v-center comics">
+        <div class="flex v-center comics">
             {#each cs as c}
                 <a href="#/detail/{c.id}" class="card">
                     <img
                         alt="{c.name} cover"
                         src="comic://localhost{c.chapters[0].path}?page=1"
                     />
-                    <div class="info">
+                    <div class="info flex space-between v-center">
                         <p>{c.name}</p>
+                        <p>0/{c.chapters.length}</p>
                     </div>
                 </a>
             {/each}
@@ -54,6 +55,8 @@
 
     .comics {
         flex-wrap: wrap;
+        column-gap: 1em;
+        row-gap: 1em;
     }
 
     img {
