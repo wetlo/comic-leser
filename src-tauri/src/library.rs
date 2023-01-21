@@ -150,6 +150,7 @@ impl Library {
             let c = Chapter {
                 id: 0,
                 pages: 0,
+                name: p.file_stem().unwrap().to_string_lossy().into_owned(),
                 path: p,
                 chapter_number: chap_num,
                 read: 0,

@@ -17,6 +17,7 @@ CREATE TABLE comic (
 CREATE TABLE chapter (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     file_path TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     chapter_number INTEGER NOT NULL,
 
     read INTEGER DEFAULT 0 NOT NULL,

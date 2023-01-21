@@ -5,8 +5,11 @@ use rusqlite_migration::{Migrations, M};
 
 use crate::entities::{Chapter, Comic};
 
-static MIGRATIONS: LazyLock<Migrations<'static>> =
-    LazyLock::new(|| Migrations::new(vec![M::up(include_str!("sql/initial-migration.sql"))]));
+static MIGRATIONS: LazyLock<Migrations<'static>> = LazyLock::new(|| {
+    Migrations::new(vec![M::up(include_str!(
+        "sql/migrations/initial-migration.sql"
+    ))])
+});
 
 #[derive(Debug)]
 pub struct Database {
@@ -20,11 +23,11 @@ const COMIC_INSERT: &str =
     "INSERT INTO comic (dir_path, name, cover_path, is_manga) VALUES (?1, ?2, ?3, ?4)";
 
 const CHAPTER_QUERY: &str =
-    "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
+    "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
 const CHAPTER_ORDER_QUERY: &str =
-    "SELECT id, file_path, chapter_number, read, pages, comic_id FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
+    "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
 const CHAPTER_INSERT: &str =
-    "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id) VALUES (?1, ?2, ?3, ?4, ?5)";
+    "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
 const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1)";
 
 impl Database {
@@ -121,7 +124,8 @@ impl Database {
                 c.chapter_number,
                 c.read,
                 c.pages,
-                comic
+                comic,
+                c.name,
             ])?;
         }
 
@@ -149,6 +153,7 @@ fn chapter_from_row(r: &rusqlite::Row) -> Result<Chapter> {
         read: r.get(3)?,
         pages: r.get(4)?,
         comic_id: r.get(5)?,
+        name: r.get(6)?,
     })
 }
 
@@ -181,6 +186,7 @@ mod tests {
                         id: 0,
                         comic_id: 0,
                         path: "/one_piece/1.cbz".into(),
+                        name: "1".to_string(),
                         read: 30,
                         pages: 30,
                         chapter_number: 1,
@@ -189,6 +195,7 @@ mod tests {
                         id: 0,
                         comic_id: 0,
                         path: "/one_piece/2.cbz".into(),
+                        name: "2".to_string(),
                         read: 12,
                         pages: 23,
                         chapter_number: 2,
@@ -208,6 +215,7 @@ mod tests {
                         id: 0,
                         comic_id: 0,
                         path: "/berserk/1.cbz".into(),
+                        name: "1".to_string(),
                         read: 67,
                         pages: 97,
                         chapter_number: 1,
@@ -216,6 +224,7 @@ mod tests {
                         id: 0,
                         comic_id: 0,
                         path: "/berserk/3.cbz".into(),
+                        name: "3".to_string(),
                         read: 0,
                         pages: 54,
                         chapter_number: 2,

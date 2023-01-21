@@ -23,6 +23,7 @@ pub struct Comic {
 pub struct Chapter {
     pub id: u32,
     pub path: PathBuf,
+    pub name: String,
     pub chapter_number: u32,
 
     pub read: u32,

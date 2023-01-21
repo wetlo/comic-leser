@@ -1,4 +1,4 @@
-SELECT c.id, dir_path, name, cover_path, is_manga, COUNT(*) as chapter_count,
+SELECT c.id, dir_path, c.name, cover_path, is_manga, COUNT(*) as chapter_count,
 -- gets the first one
 (
     -- get all chapter number which are not read (ordered)
@@ -10,4 +10,4 @@ SELECT c.id, dir_path, name, cover_path, is_manga, COUNT(*) as chapter_count,
 FROM comic c
 JOIN chapter ON c.id = comic_id
 GROUP BY c.id
-ORDER BY name;
+ORDER BY c.name;
