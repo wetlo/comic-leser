@@ -32,7 +32,7 @@
                     />
                     <div class="info flex space-between v-center">
                         <p>{c.name}</p>
-                        <p>0/{c.chapters.length}</p>
+                        <p>{c.chapter_read}/{c.chapter_count}</p>
                     </div>
                 </a>
             {/each}

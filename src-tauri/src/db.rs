@@ -13,7 +13,7 @@ pub struct Database {
     conn: Connection,
 }
 
-const COMIC_QUERY: &str = "SELECT id, dir_path, name, cover_path, is_manga FROM comic";
+const COMIC_QUERY: &str = include_str!("sql/get_comics.sql");
 const COMIC_QUERY_ID: &str =
     "SELECT id, dir_path, name, cover_path, is_manga FROM comic WHERE id = (?1)";
 const COMIC_INSERT: &str =
@@ -135,6 +135,8 @@ fn comic_from_row(r: &rusqlite::Row) -> Result<Comic> {
         name: r.get(2)?,
         cover_path: r.get::<_, Option<String>>(3)?.map(|s| s.into()),
         is_manga: r.get(4)?,
+        chapter_count: r.get(5).ok(),
+        chapter_read: r.get(6).ok(),
         chapters: vec![],
     })
 }
@@ -172,6 +174,8 @@ mod tests {
                 name: "One Piece".to_string(),
                 cover_path: None,
                 is_manga: true,
+                chapter_count: None,
+                chapter_read: None,
                 chapters: vec![
                     Chapter {
                         id: 0,
@@ -197,6 +201,8 @@ mod tests {
                 name: "Berserk".to_string(),
                 cover_path: Some("/berserk/cover.jpg".into()),
                 is_manga: true,
+                chapter_count: None,
+                chapter_read: None,
                 chapters: vec![
                     Chapter {
                         id: 0,

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use ts_rs::TS;
 
+//TODO: maybe add insert and get dtos?
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "../src/entities/")]
 pub struct Comic {
@@ -13,6 +14,8 @@ pub struct Comic {
     pub is_manga: bool,
 
     pub chapters: Vec<Chapter>,
+    pub chapter_count: Option<usize>,
+    pub chapter_read: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]

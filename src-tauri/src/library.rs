@@ -63,7 +63,7 @@ impl Library {
             let lib_comic = self.comics.iter().find(|l| l.dir_path == c.dir_path);
 
             if lib_comic.is_some() {
-                new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap().id, c)?)
+                new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap(), c)?)
             } else {
                 new_comics.push(c)
             }
@@ -88,8 +88,8 @@ impl Library {
     }
 
     /// compare the db chapters of a comic and the scanned chapter to get the new chapters
-    fn get_new_chaps_for(&self, comic_id: u32, scanned: Comic) -> Result<Vec<Chapter>> {
-        let db_chaps = self.database.comic_with_chapters(comic_id)?.chapters;
+    fn get_new_chaps_for(&self, lib_comic: &Comic, scanned: Comic) -> Result<Vec<Chapter>> {
+        let db_chaps = self.database.comic_with_chapters(lib_comic.id)?.chapters;
 
         let new = scanned
             .chapters
@@ -97,7 +97,7 @@ impl Library {
             .filter(|c| !db_chaps.iter().any(|d| d.path == c.path))
             // add the id of the comic
             .map(|mut c| {
-                c.comic_id = comic_id;
+                c.comic_id = lib_comic.id;
                 c
             })
             .collect_vec();
@@ -119,6 +119,8 @@ impl Library {
                 chapters: self
                     .scan_chapters(&d, 0, 1)
                     .expect("couldn't read comic chapters"),
+                chapter_count: None,
+                chapter_read: None,
                 is_manga: self.is_manga_db,
                 cover_path: None,
                 dir_path: d,
