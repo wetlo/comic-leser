@@ -67,8 +67,14 @@ fn get_comic_page<R: Runtime>(
 }
 
 #[tauri::command]
-fn all_comics(library: State<'_, LibState>) -> Vec<Comic> {
-    library.0.lock().unwrap().comics.clone()
+fn all_comics(library: State<'_, LibState>) -> Result<Vec<Comic>, String> {
+    library
+        .0
+        .lock()
+        .unwrap()
+        .database
+        .comics()
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

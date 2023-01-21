@@ -16,7 +16,6 @@ pub struct Library {
     pub database: Database,
     pub path: PathBuf,
     pub is_manga_db: bool,
-    pub comics: Vec<Comic>,
 }
 
 static CHAPTER_NUMBER_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
@@ -38,13 +37,10 @@ impl Library {
         let database = Database::new(db_path)?;
 
         let mut library = Self {
-            comics: database.comics()?,
             is_manga_db: true,
             path: path.as_ref().into(),
             database,
         };
-
-        dbg!(&library.comics);
 
         library.update()?;
 
@@ -53,6 +49,7 @@ impl Library {
 
     /// scan the library directory for new comics/chapters and update the database
     fn update(&mut self) -> Result<()> {
+        let lib_comics = self.database.comics()?;
         // TODO: handle deletion
         let scanned_comics = self.scan()?;
 
@@ -60,7 +57,7 @@ impl Library {
         let mut new_chapters = vec![];
 
         for c in scanned_comics {
-            let lib_comic = self.comics.iter().find(|l| l.dir_path == c.dir_path);
+            let lib_comic = lib_comics.iter().find(|l| l.dir_path == c.dir_path);
 
             if lib_comic.is_some() {
                 new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap(), c)?)
@@ -81,8 +78,6 @@ impl Library {
 
         self.database.insert_comics(&new_comics)?; // add the new comic
         self.database.insert_chapters(&new_chapters, None)?;
-
-        self.comics = self.database.comics()?;
 
         Ok(())
     }
