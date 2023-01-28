@@ -54,8 +54,11 @@
                             />
                         </td>
                         <td>
-                            <a href="#/reader/{c.comic_id}/{c.chapter_number}"
-                                >{c.name}</a
+                            <a
+                                href="#/reader/{c.comic_id}/{c.chapter_number}/{c.read <
+                                c.pages
+                                    ? c.read
+                                    : ''}">{c.name}</a
                             >
                         </td>
                         <td>{c.read} / {c.pages}</td>
