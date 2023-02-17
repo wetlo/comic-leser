@@ -80,12 +80,16 @@
     <p>{chapter.path}</p>
     <img
         alt="comic page"
-        src={`comic://localhost${chapter.path}?page=${page}`}
+        src={`comic://localhost/${encodeURIComponent(
+            chapter.path
+        )}?page=${page}`}
     />
 
     <img
         alt="comic page"
-        src={`comic://localhost${chapter.path}?page=${page + 1}`}
+        src={`comic://localhost/${encodeURIComponent(chapter.path)}?page=${
+            page + 1
+        }`}
         class="cache"
     />
 {/await}

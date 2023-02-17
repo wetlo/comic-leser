@@ -28,7 +28,9 @@
                 <a href="#/detail/{c.id}" class="card">
                     <img
                         alt="{c.name} cover"
-                        src="comic://localhost{c.chapters[0].path}?page=1"
+                        src="comic://localhost/{encodeURIComponent(
+                            c.chapters[0].path
+                        )}?page=1"
                     />
                     <div class="info flex space-between v-center">
                         <p>{c.name}</p>
