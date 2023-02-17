@@ -9,5 +9,6 @@ SELECT c.id, dir_path, c.name, cover_path, is_manga, COUNT(*) as chapter_count,
 ) -1 as read_chapters
 FROM comic c
 JOIN chapter ON c.id = comic_id
+WHERE c.id = (?1)
 GROUP BY c.id
 ORDER BY c.name

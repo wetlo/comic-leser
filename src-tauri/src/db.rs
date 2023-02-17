@@ -17,8 +17,7 @@ pub struct Database {
 }
 
 const COMIC_QUERY: &str = include_str!("sql/get_comics.sql");
-const COMIC_QUERY_ID: &str =
-    "SELECT id, dir_path, name, cover_path, is_manga FROM comic WHERE id = (?1)";
+const COMIC_QUERY_ID: &str = include_str!("sql/get_comic.sql");
 const COMIC_INSERT: &str =
     "INSERT INTO comic (dir_path, name, cover_path, is_manga) VALUES (?1, ?2, ?3, ?4)";
 
