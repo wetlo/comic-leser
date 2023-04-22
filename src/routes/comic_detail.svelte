@@ -29,7 +29,9 @@
         checked = checked;
     }
     function getContinueLink(co: Comic): string {
-        const cont = co.chapter_read + 1;
+        var cont = co.chapter_read + 1;
+        if (cont == co.chapters.length) cont = 1;
+
         const chap = co.chapters.find((c) => c.chapter_number == cont);
 
         // if you didn't begin reading the chapter begin with the first page
