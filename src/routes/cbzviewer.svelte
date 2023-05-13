@@ -77,7 +77,15 @@
     <Loading />
 {:then chapter}
     {setChapter(chapter)}
-    <p>{chapter.path}</p>
+
+    <div class="hide-zone" />
+    <span class="header">
+        <div class="flex space-around">
+            <span>{chapter.name}</span>
+            <span>{page}/{chapter.pages}</span>
+        </div>
+    </span>
+
     <img
         alt="comic page"
         src={`comic://localhost/${encodeURIComponent(
@@ -106,5 +114,28 @@
         z-index: -100;
         height: 1px;
         width: 1px;
+    }
+
+    .header {
+        display: grid;
+        margin-bottom: 2px;
+
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 200ms;
+    }
+
+    .header > div {
+        overflow: hidden;
+    }
+
+    .hide-zone {
+        position: absolute;
+        width: 100vw;
+        height: 20vh;
+        z-index: 5;
+    }
+
+    .hide-zone:hover + .header {
+        grid-template-rows: 1fr;
     }
 </style>
