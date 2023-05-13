@@ -25,8 +25,8 @@ const CHAPTER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
 const CHAPTER_ORDER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
-const CHAPTER_INSERT: &str =
-    "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
+// const CHAPTER_INSERT: &str =
+//     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
 const CHAPTER_UPSERT: &str = include_str!("sql/upsert_chapter.sql");
 const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1)";
 
