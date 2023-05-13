@@ -30,12 +30,14 @@
     }
     function getContinueLink(co: Comic): string {
         var cont = co.chapter_read + 1;
-        if (cont == co.chapters.length) cont = 1;
+        
+        if (cont >= co.chapters.length) cont = 1;
+        console.log("cont", cont);
 
         const chap = co.chapters.find((c) => c.chapter_number == cont);
 
         // if you didn't begin reading the chapter begin with the first page
-        return `#/reader/${co.id}/${cont}/${chap.read || 1}`;
+        return `#/reader/${co.id}/${cont}/${chap?.read || 1}`;
     }
 
     function getChapterLink(c: Chapter): string {
@@ -55,7 +57,7 @@
         <div class="chapters">
             <div class="operations flex flex-end">
                 <a href={getContinueLink(comic)}>Continue</a>
-                <button on:click={setRead}>read</button>
+                <button on:click={setRead}>Read</button>
             </div>
             <table>
                 <thead>
@@ -91,9 +93,28 @@
     .operations {
         background-color: #333333;
         color: lightgray;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 5px;
+        gap: 10px;
     }
 
-    a {
+    .operations > * {
+        color: lightgray;
+    }
+
+    .operations > button {
+        border: none;
+        background-color: transparent;
+        cursor: pointer;
+    }
+
+    .operations > button:hover {
+        text-decoration: underline;
+    }
+
+    td > a {
         color: #333333;
     }
 </style>
