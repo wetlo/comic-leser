@@ -28,11 +28,11 @@
         idx > -1 ? checked.splice(idx, 1) : checked.push(c);
         checked = checked;
     }
+
     function getContinueLink(co: Comic): string {
         var cont = co.chapter_read + 1;
         
         if (cont >= co.chapters.length) cont = 1;
-        console.log("cont", cont);
 
         const chap = co.chapters.find((c) => c.chapter_number == cont);
 
@@ -53,7 +53,18 @@
     {#await comicPromise}
         Loading comic
     {:then comic}
-        <h1>{comic.name}</h1>
+        <header>
+            <img alt="cover" src="comic://localhost/{encodeURIComponent(
+                comic.chapters[0].path
+            )}?page=1" />
+            <div class="banner">
+                <span class="flex space-between v-center">
+                    <h1>{comic.name}</h1>
+                    <h2>{comic.chapter_read} / {comic.chapter_count}</h2>
+                </span>
+            </div>
+
+        </header>
         <div class="chapters">
             <div class="operations flex flex-end">
                 <a href={getContinueLink(comic)}>Continue</a>
@@ -85,9 +96,43 @@
 </Navbar>
 
 <style>
+
+    header {
+        position: relative;
+        width: 100%;
+        height: 30vh;
+        overflow: hidden;
+        border-radius: 10px 10px 0 0;
+    }
+
+    header > img {
+        width: 100%;
+        margin-top: -50%;
+    }
+
+    .banner {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        bottom: 0;
+
+        background: rgb(0,0,0);
+        /* TODO: improve this gradient maybe */
+        background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.40) 100%); 
+    }
+
+    .banner > span {
+        color: white;
+        position: absolute;
+        bottom: 0;
+
+        margin: 0 20px;
+        width: calc(100% - 40px);
+    }
+
     .chapters {
-        border-radius: 10px;
         border: solid;
+        border-radius: 0 0 10px 10px;
     }
 
     .operations {
