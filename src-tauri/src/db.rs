@@ -27,6 +27,7 @@ const CHAPTER_ORDER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
 const CHAPTER_INSERT: &str =
     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
+const CHAPTER_UPSERT: &str = include_str!("sql/upsert_chapter.sql");
 const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1)";
 
 impl Database {
@@ -114,7 +115,7 @@ impl Database {
         chapters: &[Chapter],
         comic_id: Option<u32>,
     ) -> Result<()> {
-        let mut insert = tx.prepare(CHAPTER_INSERT)?;
+        let mut insert = tx.prepare(CHAPTER_UPSERT)?;
 
         for c in chapters {
             let comic = comic_id.unwrap_or(c.comic_id);
