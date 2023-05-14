@@ -3,14 +3,20 @@
 
     export let type: HTMLInputTypeAttribute;
     export let value: string;
+    export let pattern: string | undefined = undefined;
     let width = "2ch";
     $: width = value.length + "ch";
 </script>
 
 <input
 style="width: {width}"
-{type} {value} 
-on:input={e => (value = e.currentTarget.value)} />
+{type} {value} {pattern}
+
+on:input={e => {
+    value = e.currentTarget.value || value;
+    value = value
+    console.log(`[${value}]`)
+}} />
 
 
 <style>

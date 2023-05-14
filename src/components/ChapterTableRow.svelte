@@ -8,15 +8,21 @@
     let status = chapter.read.toString();
     let read = chapter.read.toString();
 
-    $: if (status != read) {
-        console.log(read);
+    $: if (read && status != read) {
+
+        if (parseInt(read) <= chapter.pages) {
+            console.log("hello", read);
+        } else {
+            console.log("world", read)
+            read = chapter.pages.toString();
+        }
+
+        console.log("world", read)
         status = read;
     }
 
     function getChapterLink(c: Chapter): string {
-        let page: string | number = "";
-        if (c.read < c.pages) page = c.read || 1;
-        console.log(page);
+        const page = c.read == c.pages || c.read == 0 ? 1 : c.read;
 
         return `#/reader/${c.comic_id}/${c.chapter_number}/${page}`;
     }
