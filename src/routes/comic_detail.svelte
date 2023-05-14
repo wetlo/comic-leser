@@ -218,6 +218,10 @@
         padding: 10px;
     }
 
+    th {
+        text-decoration: underline;
+    }
+
     tr:nth-child(even) {
         background-color: #111;
     }
