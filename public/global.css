@@ -66,6 +66,12 @@ button:focus {
 	border-color: #666;
 }
 
+.text-left {
+	text-align: left;
+}
+
+/* flex classes */
+
 .flex {
 	display: flex;
 }

@@ -4,6 +4,7 @@
     import type { Comic } from "../entities/Comic";
     import { CheckIcon, PlayIcon } from "svelte-feather-icons";
     import { getComicWithChapters, updateChapterReadStatus } from "../api/api";
+    import ChapterTableRow from "../components/ChapterTableRow.svelte";
 
     export let params: { id: string };
 
@@ -37,14 +38,6 @@
 
         // if you didn't begin reading the chapter begin with the first page
         return `#/reader/${co.id}/${cont}/${chap?.read || 1}`;
-    }
-
-    function getChapterLink(c: Chapter): string {
-        let page: string | number = "";
-        if (c.read < c.pages) page = c.read || 1;
-        console.log(page);
-
-        return `#/reader/${c.comic_id}/${c.chapter_number}/${page}`;
     }
 
     function onKeyDown(e: KeyboardEvent): void {
@@ -88,33 +81,16 @@
             </div>
         </header>
 
-        <div class="chapters">
-            <!-- <div class="operations flex flex-end">
-                <a href={getContinueLink(comic)}>Continue</a>
-                <button on:click={setRead}>Read</button>
-            </div> -->
-            <table cellspacing="0">
-                <thead>
-                    <th />
-                    <th class="left">Name</th>
-                    <th>Pages</th>
-                </thead>
-                {#each comic.chapters as c}
-                    <tr>
-                        <td class="check">
-                            <input
-                                type="checkbox"
-                                on:change={() => toggleChecked(c)}
-                            />
-                        </td>
-                        <td class="left">
-                            <a href={getChapterLink(c)}>{c.name}</a>
-                        </td>
-                        <td>{c.read} / {c.pages}</td>
-                    </tr>
-                {/each}
-            </table>
-        </div>
+        <table cellspacing="0">
+            <thead>
+                <th />
+                <th class="text-left">Name</th>
+                <th>Pages</th>
+            </thead>
+            {#each comic.chapters as c}
+                <ChapterTableRow chapter={c} {toggleChecked}/>
+            {/each}
+        </table>
     {/await}
 </Navbar>
 
@@ -130,24 +106,27 @@
     }
 
     .banner-container > img {
+        /*vertically center the image */
         width: 100%;
         margin-top: -50%;
     }
 
+    .banner,
     .banner-container {
         border-radius: 10px 10px 0 0;
         width: 100%;
         height: 100%;
+    }
+
+    .banner-container {
+        /* crop the image */
         overflow: hidden;
     }
 
     .banner {
-        width: 100%;
-        height: 100%;
         position: absolute;
         bottom: 0;
 
-        border-radius: 10px 10px 0 0;
         background: rgb(0,0,0);
         /* TODO: improve this gradient maybe */
         background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.40) 100%);
@@ -165,14 +144,8 @@
         width: calc(100% - 40px);
     }
 
-    span > h1, span >h2 {
+    h1, h2 {
         margin-bottom: 0.1rem;
-    }
-
-    .chapters {
-        border: solid;
-        border-color: #111;
-        border-radius: 0 0 10px 10px;
     }
 
     .operations {
@@ -188,18 +161,18 @@
         color: white;
     }
 
-    .operations > button {
+    button {
         border: none;
         background-color: transparent;
         cursor: pointer;
     }
 
-    .operations > button:hover {
-        text-decoration: underline;
-    }
-
     table {
         width: 100%;
+
+        border: solid;
+        border-color: #111;
+        border-radius: 0 0 10px 10px;
     }
 
     thead {
@@ -208,23 +181,9 @@
         background-color: #171717;
     }
 
-     td, th, td > a {
-        color: lightgray;
-    }
-
-    td, th {
-        padding: 10px;
-    }
-
     th {
+        color: white;
+        padding: 10px;
         text-decoration: underline;
-    }
-
-    tr:nth-child(even) {
-        background-color: #111;
-    }
-
-    .left {
-        text-align: left;
     }
 </style>
