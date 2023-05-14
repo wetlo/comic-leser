@@ -78,13 +78,14 @@
 {:then chapter}
     {setChapter(chapter)}
 
-    <div class="hide-zone" />
-    <span class="header">
-        <div class="flex space-around">
-            <span>{chapter.name}</span>
-            <span>{page}/{chapter.pages}</span>
-        </div>
-    </span>
+    <div class="hide-zone">
+        <span class="header">
+            <div class="flex space-around">
+                <h3>{chapter.name}</h3>
+                <h3>{page}/{chapter.pages}</h3>
+            </div>
+        </span>
+    </div>
 
     <img
         alt="comic page"
@@ -117,25 +118,29 @@
     }
 
     .header {
-        display: grid;
-        margin-bottom: 2px;
-
-        grid-template-rows: 0fr;
-        transition: grid-template-rows 200ms;
+        position: relative;        
+        top: -10vh;
+        transition: top 200ms;  
     }
 
     .header > div {
-        overflow: hidden;
+        height: 10vh;
+
+        color: lightgray;
+        background: rgb(25,25,25);
+        background: linear-gradient(0deg, rgba(25,25,25,0) 0%, rgba(25,25,25,0.7749300403755253) 46%, rgba(0,0,0,1) 100%); 
     }
 
     .hide-zone {
-        position: absolute;
+        position: fixed;
+        top: 0;
+
         width: 100vw;
         height: 20vh;
         z-index: 5;
     }
 
-    .hide-zone:hover + .header {
-        grid-template-rows: 1fr;
+    .hide-zone:hover > .header {
+        top: 0;
     }
 </style>
