@@ -3,6 +3,7 @@
     import Navbar from "../components/Navbar.svelte";
     import type { Chapter } from "../entities/Chapter";
     import type { Comic } from "../entities/Comic";
+    import { CheckIcon, PlayIcon } from "svelte-feather-icons";
 
     export let params: { id: string };
     let comicPromise = invoke("comic_with_chapters", {
@@ -64,24 +65,31 @@
         Loading comic
     {:then comic}
         <header>
-            <img alt="cover" src="comic://localhost/{encodeURIComponent(
-                comic.chapters[0].path
-            )}?page=1" />
+            <div class="banner-container">
+                <img alt="cover" src="comic://localhost/{encodeURIComponent(
+                    comic.chapters[0].path
+                )}?page=1" />   
+            </div>
+            
             <div class="banner">
                 <span>
-                    <span class="flex space-between v-center">
+                    <span class="flex space-between v-flex-end">
                         <h1>{comic.name}</h1>
                         <h2>{comic.chapter_read} / {comic.chapter_count}</h2>
                     </span>
 
                     <div class="operations flex flex-end">
-                        <a href={getContinueLink(comic)}>Continue</a>
-                        <button on:click={setRead}>Read</button>
+                        <button on:click={setRead} data-tooltip="Set marked chapters as read">
+                            <CheckIcon />
+                        </button>
+                        <a href={getContinueLink(comic)} data-tooltip="Continue from the last read chapter">
+                            <PlayIcon />
+                        </a>
                     </div>
                 </span>
             </div>
-
         </header>
+
         <div class="chapters">
             <!-- <div class="operations flex flex-end">
                 <a href={getContinueLink(comic)}>Continue</a>
@@ -119,13 +127,20 @@
         top: 0;
         width: 100%;
         height: 30vh;
-        overflow: hidden;
-        border-radius: 10px 10px 0 0;
+        
+        z-index: 5;
     }
 
-    header > img {
+    .banner-container > img {
         width: 100%;
         margin-top: -50%;
+    }
+
+    .banner-container {
+        border-radius: 10px 10px 0 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
     }
 
     .banner {
@@ -134,9 +149,12 @@
         position: absolute;
         bottom: 0;
 
+        border-radius: 10px 10px 0 0;
         background: rgb(0,0,0);
         /* TODO: improve this gradient maybe */
-        background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.40) 100%); 
+        background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.40) 100%);
+
+        z-index: 100000;
     }
 
     .banner > span {
@@ -147,6 +165,10 @@
 
         margin: 0 20px;
         width: calc(100% - 40px);
+    }
+
+    span > h1, span >h2 {
+        margin-bottom: 0.1rem;
     }
 
     .chapters {
@@ -160,6 +182,7 @@
         justify-content: flex-end;
         align-items: center;
         padding: 5px;
+        padding-top: 0;
         gap: 10px;
     }
 
