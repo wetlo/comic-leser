@@ -61,6 +61,9 @@
                     page = 1;
                 }
                 break;
+            case "Escape":
+                history.back();
+                break;
         }
     }
 

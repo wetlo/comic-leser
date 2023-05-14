@@ -47,7 +47,17 @@
 
         return `#/reader/${c.comic_id}/${c.chapter_number}/${page}`;
     }
+
+    function onKeyDown(e: KeyboardEvent): void {
+        switch (e.key) {
+            case "Escape":
+                history.back();
+                break;
+        }
+    }
 </script>
+
+<svelte:window on:keydown="{onKeyDown}" />
 
 <Navbar>
     {#await comicPromise}
