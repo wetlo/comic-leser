@@ -11,7 +11,7 @@ export function getComicWithChapters(comic_id: number): Promise<Comic | null> {
 }
 
 export function getChapterByNumber(comic_id: number, chapter_number: number): Promise<Chapter> {
-    return invoke("chapter", { comicId: comic_id, chapter_number: 1 });
+    return invoke("chapter", { comicId: comic_id, chapterNumber: chapter_number });
 }
 
 export function updateChapterReadStatus(chapter_id: number, page: number): Promise<void> {
