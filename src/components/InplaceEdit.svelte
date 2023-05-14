@@ -1,17 +1,28 @@
 <script lang="ts">
     import type { HTMLInputTypeAttribute } from 'svelte/elements';
-    export let type: HTMLInputTypeAttribute;
 
-    export let value: any;
+    export let type: HTMLInputTypeAttribute;
+    export let value: string;
+    let width = "2ch";
+    $: width = value.length + "ch";
 </script>
 
-<input {type} {value} on:input={e => (value = e.currentTarget.value)}/>
+<input
+style="width: {width}"
+{type} {value} 
+on:input={e => (value = e.currentTarget.value)} />
+
 
 <style>
     input {
+        padding: 0;
+        /* width: 100%; */
+        min-width: 1ch;
+
         background-color: transparent;
         color: inherit;
         border: none;
+        resize: none;
     }
 
     input:focus {
