@@ -68,33 +68,40 @@
                 comic.chapters[0].path
             )}?page=1" />
             <div class="banner">
-                <span class="flex space-between v-center">
-                    <h1>{comic.name}</h1>
-                    <h2>{comic.chapter_read} / {comic.chapter_count}</h2>
+                <span>
+                    <span class="flex space-between v-center">
+                        <h1>{comic.name}</h1>
+                        <h2>{comic.chapter_read} / {comic.chapter_count}</h2>
+                    </span>
+
+                    <div class="operations flex flex-end">
+                        <a href={getContinueLink(comic)}>Continue</a>
+                        <button on:click={setRead}>Read</button>
+                    </div>
                 </span>
             </div>
 
         </header>
         <div class="chapters">
-            <div class="operations flex flex-end">
+            <!-- <div class="operations flex flex-end">
                 <a href={getContinueLink(comic)}>Continue</a>
                 <button on:click={setRead}>Read</button>
-            </div>
-            <table>
+            </div> -->
+            <table cellspacing="0">
                 <thead>
                     <th />
-                    <th>Name</th>
-                    <th>Read Status</th>
+                    <th class="left">Name</th>
+                    <th>Pages</th>
                 </thead>
                 {#each comic.chapters as c}
                     <tr>
-                        <td>
+                        <td class="check">
                             <input
                                 type="checkbox"
                                 on:change={() => toggleChecked(c)}
                             />
                         </td>
-                        <td>
+                        <td class="left">
                             <a href={getChapterLink(c)}>{c.name}</a>
                         </td>
                         <td>{c.read} / {c.pages}</td>
@@ -108,7 +115,8 @@
 <style>
 
     header {
-        position: relative;
+        position: sticky;
+        top: 0;
         width: 100%;
         height: 30vh;
         overflow: hidden;
@@ -135,6 +143,7 @@
         color: white;
         position: absolute;
         bottom: 0;
+        left: 0;
 
         margin: 0 20px;
         width: calc(100% - 40px);
@@ -142,12 +151,11 @@
 
     .chapters {
         border: solid;
+        border-color: #111;
         border-radius: 0 0 10px 10px;
     }
 
     .operations {
-        background-color: #333333;
-        color: lightgray;
         display: flex;
         justify-content: flex-end;
         align-items: center;
@@ -156,7 +164,7 @@
     }
 
     .operations > * {
-        color: lightgray;
+        color: white;
     }
 
     .operations > button {
@@ -169,7 +177,29 @@
         text-decoration: underline;
     }
 
-    td > a {
-        color: #333333;
+    table {
+        width: 100%;
+    }
+
+    thead {
+        position: sticky;
+        top: 30vh;
+        background-color: #171717;
+    }
+
+     td, th, td > a {
+        color: lightgray;
+    }
+
+    td, th {
+        padding: 10px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #111;
+    }
+
+    .left {
+        text-align: left;
     }
 </style>
