@@ -1,28 +1,29 @@
 <script lang="ts">
-    import type { HTMLInputTypeAttribute } from 'svelte/elements';
-
-    export let type: HTMLInputTypeAttribute;
-    export let value: string;
+    export let value: number;
     export let pattern: string | undefined = undefined;
+
+    let val = value;
+    let text = value.toString();
+    $: text = value.toString();
     let width = "2ch";
-    $: width = value.length + "ch";
+    $: width = text.length + "ch";
+
+    $: {
+        val = parseInt(text) || 0;
+        text = val.toString();
+    }
+
+    $: value = val;
 </script>
 
 <input
-style="width: {width}"
-{type} {value} {pattern}
-
-on:input={e => {
-    value = e.currentTarget.value || value;
-    value = value
-    console.log(`[${value}]`)
-}} />
-
+    style="width: {width}"
+    type="text" bind:value={text} {pattern}
+/>
 
 <style>
     input {
         padding: 0;
-        /* width: 100%; */
         min-width: 1ch;
 
         background-color: transparent;
@@ -36,12 +37,5 @@ on:input={e => {
         border-bottom: solid 1px;
         color: inherit;
         outline: none;
-    }
-
-    /* TODO: does this even work on all platforms?? */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
     }
 </style>

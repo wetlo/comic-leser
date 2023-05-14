@@ -5,19 +5,14 @@
     export let chapter: Chapter;
     export let toggleChecked: (c: Chapter) => void;
 
-    let status = chapter.read.toString();
-    let read = chapter.read.toString();
+    let status = chapter.read;
+    let read = chapter.read;
 
-    $: if (read && status != read) {
+    $: if (!isNaN(read) && status != read) {
 
-        if (parseInt(read) <= chapter.pages) {
-            console.log("hello", read);
-        } else {
-            console.log("world", read)
-            read = chapter.pages.toString();
-        }
+        if (read > chapter.pages)
+            read = chapter.pages;
 
-        console.log("world", read)
         status = read;
     }
 
@@ -38,7 +33,7 @@
     <td class="text-left name">
         <a href={getChapterLink(chapter)}>{chapter.name}</a>
     </td>
-    <td class="pages"><InplaceEdit type="number" bind:value={read}/> / {chapter.pages}</td>
+    <td class="pages"><InplaceEdit bind:value={read}/> / {chapter.pages}</td>
 </tr>
 
 <style>
