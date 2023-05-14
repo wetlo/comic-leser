@@ -1,16 +1,14 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
-    import { each } from "svelte/internal";
     import Navbar from "../components/Navbar.svelte";
-    import type { Comic } from "../entities/Comic";
+    import { getAllComics, getChapterByNumber } from "../api/api";
 
     async function get_comics() {
-        const cs = (await invoke("all_comics")) as Comic[];
+        const cs = await getAllComics();
 
         for (let i = 0; i < cs.length; i++) {
             const c = cs[i];
             c.chapters = [
-                await invoke("chapter", { comicId: c.id, chapterNumber: 1 }),
+                await getChapterByNumber(c.id, 1),
             ];
         }
 

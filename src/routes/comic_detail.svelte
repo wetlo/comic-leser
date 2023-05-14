@@ -1,22 +1,20 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
     import Navbar from "../components/Navbar.svelte";
     import type { Chapter } from "../entities/Chapter";
     import type { Comic } from "../entities/Comic";
     import { CheckIcon, PlayIcon } from "svelte-feather-icons";
+    import { getComicWithChapters, updateChapterReadStatus } from "../api/api";
 
     export let params: { id: string };
-    let comicPromise = invoke("comic_with_chapters", {
-        id: parseInt(params.id),
-    }).then((v) => v as Comic | null);
 
+    let comicPromise = getComicWithChapters(parseInt(params.id));
     let checked: Chapter[] = [];
 
     $: console.log(checked);
 
     function setRead() {
         checked.forEach((c) =>
-            invoke("chapter_page_update", { id: c.id, page: c.pages })
+            updateChapterReadStatus(c.id, c.pages)
         );
         comicPromise = comicPromise;
     }

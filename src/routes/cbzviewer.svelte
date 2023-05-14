@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
     import { Loading } from "attractions";
     import type { Chapter } from "../entities/Chapter";
+    import { getChapterByNumber, updateChapterReadStatus } from "../api/api";
 
     //import { querystring } from "svelte-spa-router";
     interface Params {
@@ -22,9 +22,7 @@
     let page = params.page ? parseInt(params.page) : 1;
 
     // get the new chapter when the number updates
-    $: chapterPromise = invoke("chapter", { comicId, chapterNumber }).then(
-        (c) => c as Chapter
-    );
+    $: chapterPromise = getChapterByNumber(comicId, chapterNumber);
 
     $: {
         page = wentBack ? chapter.pages : page;
@@ -36,7 +34,7 @@
     // TODO: maybe merge with other reactive thingy
     // make sure the chapter is already loaded
     $: if (chapterNumber == chapter?.chapter_number && page > chapter?.read)
-        invoke("chapter_page_update", { id: chapter.id, page });
+        updateChapterReadStatus(chapter.id, page);
 
     function onKeypress(e: KeyboardEvent) {
         switch (e.key) {
