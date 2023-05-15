@@ -1,7 +1,7 @@
 <script lang="ts">
     import { updateChapterReadStatus } from "../api/api";
     import type { Chapter } from "../entities/Chapter";
-    import InplaceEdit from "./InplaceEdit.svelte";
+    import InplaceNumberEdit from "./InplaceNumberEdit.svelte";
 
     export let chapter: Chapter;
     export let toggleChecked: (c: Chapter) => void;
@@ -11,9 +11,7 @@
 
     // only run on read updated
     $: if (!isNaN(read) && lastRead != read) {
-
-        if (read > chapter.pages)
-            read = chapter.pages;
+        if (read > chapter.pages) read = chapter.pages;
 
         lastRead = read;
         updateChapterReadStatus(chapter.id, read);
@@ -29,15 +27,14 @@
 
 <tr>
     <td class="check">
-        <input
-            type="checkbox"
-            on:change={() => toggleChecked(chapter)}
-        />
+        <input type="checkbox" on:change={() => toggleChecked(chapter)} />
     </td>
     <td class="text-left name">
         <a href={getChapterLink(chapter)}>{chapter.name}</a>
     </td>
-    <td class="pages"><InplaceEdit bind:value={read}/> / {chapter.pages}</td>
+    <td class="pages"
+        ><InplaceNumberEdit bind:value={read} /> / {chapter.pages}</td
+    >
 </tr>
 
 <style>
@@ -49,7 +46,8 @@
         padding: 10px;
     }
 
-    td, td > a {
+    td,
+    td > a {
         color: white;
     }
 
