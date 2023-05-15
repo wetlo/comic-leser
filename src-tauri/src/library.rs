@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     fs::{DirEntry, FileType},
     path::{Path, PathBuf},
@@ -89,7 +90,11 @@ impl Library {
         let new = scanned
             .chapters
             .into_iter()
-            .filter(|c| !db_chaps.iter().any(|d| d.path == c.path && c.chapter_number == d.chapter_number))
+            .filter(|c| {
+                !db_chaps
+                    .iter()
+                    .any(|d| d.path == c.path && c.chapter_number == d.chapter_number)
+            })
             // add the id of the comic
             .map(|mut c| {
                 c.comic_id = lib_comic.id;
@@ -102,27 +107,39 @@ impl Library {
 
     /// scan the comic directory, to get every comic + chapter inside
     fn scan(&mut self) -> Result<Vec<Comic>> {
+        let db_comics = self
+            .database
+            .comics()?
+            .into_iter()
+            .map(|c| (c.dir_path.clone(), c))
+            .collect::<HashMap<PathBuf, Comic>>();
+
         let comics = read_entries_with_file_type(&self.path, is_not_hidden, |t| t.is_dir())?
             // only use entries with valid paths
             .filter_map(|d| Some(d.ok()?.path()))
             // create comic from entry
-            .map(|d| Comic {
-                id: 0,
-                name: d
-                    .file_name()
-                    .map_or(String::from(""), |n| n.to_string_lossy().to_string()),
-                chapters: self
-                    .scan_chapters(&d, 0, 1)
-                    .expect("couldn't read comic chapters"),
-                chapter_count: None,
-                chapter_read: None,
-                is_manga: self.is_manga_db,
-                cover_path: None,
-                dir_path: d,
-            })
+            .map(|d| self.create_scanned_comic(d, &db_comics))
             .collect_vec();
 
         Ok(comics)
+    }
+
+    fn create_scanned_comic(&self, d: PathBuf, db_comics: &HashMap<PathBuf, Comic>) -> Comic {
+        let id = db_comics.get(&d).map(|c| c.id).unwrap_or_default();
+        Comic {
+            id,
+            name: d
+                .file_name()
+                .map_or(String::from(""), |n| n.to_string_lossy().to_string()),
+            chapters: self
+                .scan_chapters(&d, id, 1)
+                .expect("couldn't read comic chapters"),
+            chapter_count: None,
+            chapter_read: None,
+            is_manga: self.is_manga_db,
+            cover_path: None,
+            dir_path: d,
+        }
     }
 
     /// get the chapters inside a comic directory
@@ -133,6 +150,13 @@ impl Library {
         chapter_number: u32,
     ) -> Result<Vec<Chapter>> {
         let mut chap_num = chapter_number;
+        let chapter_orderings = self
+            .database
+            .chapter_orderings(comic_id)?
+            .into_iter()
+            .map(|o| regex::Regex::new(&o.regex))
+            .collect::<Result<Vec<_>, _>>()?;
+
         let chaps = read_entries_with_file_type(
             path,
             |f| f.extension().is_some_and(|e| e.to_string_lossy() == "cbz"),
@@ -140,7 +164,7 @@ impl Library {
         )?
         .map(|r| r.unwrap().path())
         // sort them by their chapter number for numbering them
-        .sorted_by_key(|p| self.chapter_number_from_path(p))
+        .sorted_by_key(|p| self.chapter_number_from_path(p, &chapter_orderings))
         .map(|p| {
             let c = Chapter {
                 id: 0,
@@ -161,15 +185,30 @@ impl Library {
 
     /// parse the chapter number from the chapter location
     /// this also handles in between chapters like 10.5
-    fn chapter_number_from_path(&self, path: &Path) -> Vec<u32> {
+    fn chapter_number_from_path(
+        &self,
+        path: &Path,
+        chapter_orderings: &[regex::Regex],
+    ) -> Vec<u32> {
         let name = path.file_stem().unwrap_or_default().to_string_lossy();
-        let num_matches = CHAPTER_NUMBER_REGEX
+
+        let ordering = chapter_orderings
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.is_match(&name))
+            .map(|(i, _)| i as u32)
+            .next();
+
+        let mut num_matches = CHAPTER_NUMBER_REGEX
             .captures_iter(&name)
             // get the number from either the first or second capture
             .map(|c| c.get(1).or_else(|| c.get(2)))
             .map(|o| o.unwrap().as_str())
             .map(|s| s.parse::<u32>().unwrap())
             .collect_vec();
+
+        // begin with the ordering and if no right ordering has been found just use the biggest possible
+        num_matches.insert(0, ordering.unwrap_or(u32::MAX));
         num_matches
     }
 }
