@@ -34,3 +34,7 @@ export function insertChapterOrdering(ordering: ChapterOrdering): Promise<void> 
 export function deleteChapterOrdering(id: number): Promise<void> {
     return invoke("delete_ordering", { id })
 }
+
+export function updateChapterOrdering(ordering: ChapterOrdering): Promise<void> {
+    return invoke("update_ordering", { ordering })
+}
