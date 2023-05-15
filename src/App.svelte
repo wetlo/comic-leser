@@ -4,10 +4,12 @@
 	import Cbzviewer from "./routes/cbzviewer.svelte";
 	import Library from "./routes/library.svelte";
 	import ComicDetail from "./routes/comic_detail.svelte";
+	import ComicSettings from "./routes/comic_settings.svelte";
 
 	const routes = {
 		"/": Library,
 		"/detail/:id": ComicDetail,
+		"/detail/:id/settings": ComicSettings,
 		"/reader/:comic/:chapter/:page?": Cbzviewer,
 		"/test": Test,
 	};

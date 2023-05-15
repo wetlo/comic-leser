@@ -89,6 +89,17 @@ fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comic, S
 }
 
 #[tauri::command]
+fn comic(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .database
+        .comic(id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn chapter(
     comic_id: u32,
     chapter_number: u32,

@@ -58,10 +58,13 @@ impl Database {
         comics.try_collect::<Vec<Comic>>()
     }
 
+    pub fn comic(&self, comic_id: u32) -> Result<Comic> {
+        self.conn
+            .query_row(COMIC_QUERY_ID, [comic_id], comic_from_row)
+    }
+
     pub fn comic_with_chapters(&self, comic_id: u32) -> Result<Comic> {
-        let mut comic = self
-            .conn
-            .query_row(COMIC_QUERY_ID, [comic_id], comic_from_row)?;
+        let mut comic = self.comic(comic_id)?;
 
         let chaps = self
             .conn
