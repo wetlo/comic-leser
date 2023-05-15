@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { TrashIcon } from "svelte-feather-icons";
     import {
+        deleteChapterOrdering,
         getChapterOrderings,
         getComic,
         insertChapterOrdering,
@@ -19,17 +21,24 @@
         return "";
     }
 
-    function addEmptyOrder(comic: Comic, orderings: ChapterOrdering[]) {
+    function addEmptyOrder() {
         const rank = orderings[orderings.length - 1]?.rank || 0;
         const order: ChapterOrdering = {
             id: 0, // invalid id for typescript
             rank: rank + 1,
             regex: "",
-            comic_id: comic.id,
+            comic_id: comicId,
         };
-        insertChapterOrdering(order);
 
-        orderPromise = getChapterOrderings(comicId);
+        orderPromise = insertChapterOrdering(order).then((_) =>
+            getChapterOrderings(comicId)
+        );
+    }
+
+    function deleteOrdering(o: ChapterOrdering): void {
+        orderPromise = deleteChapterOrdering(o.id).then((_) =>
+            getChapterOrderings(comicId)
+        );
     }
 </script>
 
@@ -43,8 +52,13 @@
     <h1>{c.name}</h1>
 
     {#each orderings as o}
-        <p>{o.regex} - {o.rank}</p>
+        <p>
+            <span>{o.regex} - {o.rank}</span>
+            <button on:click={() => deleteOrdering(o)}>
+                <TrashIcon />
+            </button>
+        </p>
     {/each}
 
-    <button on:click={() => addEmptyOrder(c, orderings)}>Add</button>
+    <button on:click={addEmptyOrder}>Add</button>
 {/await}

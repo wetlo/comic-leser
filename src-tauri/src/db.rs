@@ -33,8 +33,12 @@ const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1
 
 const CHAPTER_ORDERING_QUERY: &str =
     "SELECT id, comic_id, rank, regex FROM chapterordering WHERE comic_id = (?1) ORDER BY rank";
+const CHAPTER_ORDERING_BY_ID: &str =
+    "SELECT id, comic_id, rank, regex FROM chapterordering WHERE id = (?1)";
 const CHAPTER_ORDER_INSERT: &str =
     "INSERT INTO chapterordering (comic_id, rank, regex) VALUES (?1, ?2, ?3)";
+const CHAPTER_ORDER_DELETE: &str = "DELETE FROM chapterordering WHERE id = (?1)";
+const CHAPTER_ORDER_DECREMENT: &str = include_str!("sql/decrement_rank_ordering.sql");
 
 impl Database {
     pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
@@ -91,6 +95,11 @@ impl Database {
         let mut orderings = query.query_map([comic_id], chapter_order_from_row)?;
 
         orderings.try_collect()
+    }
+
+    pub fn chapter_ordering(&self, id: u32) -> Result<ChapterOrdering> {
+        self.conn
+            .query_row(CHAPTER_ORDERING_BY_ID, [id], chapter_order_from_row)
     }
 
     pub fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
@@ -155,6 +164,15 @@ impl Database {
                 CHAPTER_ORDER_INSERT,
                 params![ordering.comic_id, ordering.rank, ordering.regex],
             )
+            .map(|_| ())
+    }
+
+    pub fn delete_chapter_ordering(&mut self, id: u32) -> Result<()> {
+        let order = self.chapter_ordering(id)?;
+        self.conn.execute(CHAPTER_ORDER_DELETE, params![id])?;
+
+        self.conn
+            .execute(CHAPTER_ORDER_DECREMENT, params![order.comic_id, order.rank])
             .map(|_| ())
     }
 }

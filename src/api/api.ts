@@ -30,3 +30,7 @@ export function getChapterOrderings(comicId: number): Promise<ChapterOrdering[]>
 export function insertChapterOrdering(ordering: ChapterOrdering): Promise<void> {
     return invoke("insert_ordering", { ordering })
 }
+
+export function deleteChapterOrdering(id: number): Promise<void> {
+    return invoke("delete_ordering", { id })
+}
