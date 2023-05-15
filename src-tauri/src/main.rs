@@ -160,6 +160,7 @@ fn main() -> anyhow::Result<()> {
         .invoke_handler(tauri::generate_handler![
             all_comics,
             comic_with_chapters,
+            comic,
             chapter,
             chapter_page_update,
             chapter_orderings,

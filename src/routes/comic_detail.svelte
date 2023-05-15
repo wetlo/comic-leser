@@ -2,7 +2,8 @@
     import Navbar from "../components/Navbar.svelte";
     import type { Chapter } from "../entities/Chapter";
     import type { Comic } from "../entities/Comic";
-    import { CheckIcon, PlayIcon } from "svelte-feather-icons";
+    import { CheckIcon, PlayIcon, SettingsIcon } from "svelte-feather-icons";
+    import { WebviewWindow } from "@tauri-apps/api/window";
     import { getComicWithChapters, updateChapterReadStatus } from "../api/api";
     import ChapterTableRow from "../components/ChapterTableRow.svelte";
 
@@ -14,9 +15,7 @@
     $: console.log(checked);
 
     function setRead() {
-        checked.forEach((c) =>
-            updateChapterReadStatus(c.id, c.pages)
-        );
+        checked.forEach((c) => updateChapterReadStatus(c.id, c.pages));
         comicPromise = comicPromise;
     }
 
@@ -31,13 +30,19 @@
 
     function getContinueLink(co: Comic): string {
         var cont = co.chapter_read + 1;
-        
+
         if (cont >= co.chapters.length) cont = 1;
 
         const chap = co.chapters.find((c) => c.chapter_number == cont);
 
         // if you didn't begin reading the chapter begin with the first page
         return `#/reader/${co.id}/${cont}/${chap?.read || 1}`;
+    }
+
+    function openSettingsWindow(c: Comic): void {
+        const webview = new WebviewWindow("comic-settings", {
+            url: `#/detail/${c.id}/settings`,
+        });
     }
 
     function onKeyDown(e: KeyboardEvent): void {
@@ -49,7 +54,7 @@
     }
 </script>
 
-<svelte:window on:keydown="{onKeyDown}" />
+<svelte:window on:keydown={onKeyDown} />
 
 <Navbar>
     {#await comicPromise}
@@ -57,11 +62,14 @@
     {:then comic}
         <header>
             <div class="banner-container">
-                <img alt="cover" src="comic://localhost/{encodeURIComponent(
-                    comic.chapters[0].path
-                )}?page=1" />   
+                <img
+                    alt="cover"
+                    src="comic://localhost/{encodeURIComponent(
+                        comic.chapters[0].path
+                    )}?page=1"
+                />
             </div>
-            
+
             <div class="banner">
                 <span>
                     <span class="flex space-between v-flex-end">
@@ -70,10 +78,22 @@
                     </span>
 
                     <div class="operations flex flex-end">
-                        <button on:click={setRead} data-tooltip="Set marked chapters as read">
+                        <button
+                            on:click={(_) => openSettingsWindow(comic)}
+                            data-tooltip="Open settings for the comic"
+                        >
+                            <SettingsIcon />
+                        </button>
+                        <button
+                            on:click={setRead}
+                            data-tooltip="Set marked chapters as read"
+                        >
                             <CheckIcon />
                         </button>
-                        <a href={getContinueLink(comic)} data-tooltip="Continue from the last read chapter">
+                        <a
+                            href={getContinueLink(comic)}
+                            data-tooltip="Continue from the last read chapter"
+                        >
                             <PlayIcon />
                         </a>
                     </div>
@@ -88,20 +108,19 @@
                 <th>Pages</th>
             </thead>
             {#each comic.chapters as c}
-                <ChapterTableRow chapter={c} {toggleChecked}/>
+                <ChapterTableRow chapter={c} {toggleChecked} />
             {/each}
         </table>
     {/await}
 </Navbar>
 
 <style>
-
     header {
         position: sticky;
         top: 0;
         width: 100%;
         height: 30vh;
-        
+
         z-index: 5;
     }
 
@@ -127,9 +146,14 @@
         position: absolute;
         bottom: 0;
 
-        background: rgb(0,0,0);
+        background: rgb(0, 0, 0);
         /* TODO: improve this gradient maybe */
-        background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.40) 100%);
+        background: linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 1) 0%,
+            rgba(0, 0, 0, 0.75) 60%,
+            rgba(0, 0, 0, 0.4) 100%
+        );
 
         z-index: 100000;
     }
@@ -144,7 +168,8 @@
         width: calc(100% - 40px);
     }
 
-    h1, h2 {
+    h1,
+    h2 {
         margin-bottom: 0.1rem;
     }
 
