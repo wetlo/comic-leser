@@ -10,6 +10,7 @@
     } from "../api/api";
     import type { ChapterOrdering } from "../entities/ChapterOrdering";
     import type { Comic } from "../entities/Comic";
+    import ChapterOrderingRow from "../components/ChapterOrderingRow.svelte";
 
     export let params: { id: string };
     const comicId = +params.id;
@@ -72,12 +73,10 @@
         on:finalize={handleDndFinalize}
     >
         {#each orderings as o (o.id)}
-            <p>
-                <span>{o.regex} - {o.rank}</span>
-                <button on:click={() => deleteOrdering(o)}>
-                    <TrashIcon />
-                </button>
-            </p>
+            <ChapterOrderingRow
+                ordering={o}
+                handleDelete={() => deleteOrdering(o)}
+            />
         {/each}
     </section>
 

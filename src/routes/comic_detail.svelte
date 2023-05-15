@@ -6,6 +6,7 @@
     import { WebviewWindow } from "@tauri-apps/api/window";
     import { getComicWithChapters, updateChapterReadStatus } from "../api/api";
     import ChapterTableRow from "../components/ChapterTableRow.svelte";
+    import IconButton from "../components/IconButton.svelte";
 
     export let params: { id: string };
 
@@ -78,18 +79,18 @@
                     </span>
 
                     <div class="operations flex flex-end">
-                        <button
+                        <IconButton
                             on:click={(_) => openSettingsWindow(comic)}
-                            data-tooltip="Open settings for the comic"
+                            tooltip="Open settings for the comic"
                         >
                             <SettingsIcon />
-                        </button>
-                        <button
+                        </IconButton>
+                        <IconButton
                             on:click={setRead}
-                            data-tooltip="Set marked chapters as read"
+                            tooltip="Set marked chapters as read"
                         >
                             <CheckIcon />
-                        </button>
+                        </IconButton>
                         <a
                             href={getContinueLink(comic)}
                             data-tooltip="Continue from the last read chapter"
@@ -184,12 +185,6 @@
 
     .operations > * {
         color: white;
-    }
-
-    button {
-        border: none;
-        background-color: transparent;
-        cursor: pointer;
     }
 
     table {
