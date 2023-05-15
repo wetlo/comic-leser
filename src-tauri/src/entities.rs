@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 //TODO: maybe add insert and get dtos?
@@ -30,4 +30,13 @@ pub struct Chapter {
     pub pages: u32,
 
     pub comic_id: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/entities/")]
+pub struct ChapterOrdering {
+    pub id: u32,
+    pub comic_id: u32,
+    pub rank: u32,
+    pub regex: String,
 }

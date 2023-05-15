@@ -17,7 +17,7 @@ use std::{
 };
 
 //use anyhow::Result;
-use entities::{Chapter, Comic};
+use entities::{Chapter, ChapterOrdering, Comic};
 use library::Library;
 use tauri::{
     http::{self, ResponseBuilder},
@@ -114,6 +114,31 @@ fn chapter_page_update(id: u32, page: u32, library: State<'_, LibState>) -> Resu
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn chapter_orderings(
+    comic_id: u32,
+    library: State<'_, LibState>,
+) -> Result<Vec<ChapterOrdering>, String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .database
+        .chapter_orderings(comic_id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn insert_ordering(ordering: ChapterOrdering, library: State<'_, LibState>) -> Result<(), String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .database
+        .insert_chapter_ordering(&ordering)
+        .map_err(|e| e.to_string())
+}
+
 fn main() -> anyhow::Result<()> {
     let library = library::Library::new("/media/manga/")?;
     let state = Arc::new(Mutex::new(library));
@@ -126,6 +151,8 @@ fn main() -> anyhow::Result<()> {
             comic_with_chapters,
             chapter,
             chapter_page_update,
+            chapter_orderings,
+            insert_ordering,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

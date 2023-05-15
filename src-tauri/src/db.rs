@@ -3,12 +3,13 @@ use std::{path::Path, sync::LazyLock};
 use rusqlite::{params, Connection, Result};
 use rusqlite_migration::{Migrations, M};
 
-use crate::entities::{Chapter, Comic};
+use crate::entities::{Chapter, ChapterOrdering, Comic};
 
 static MIGRATIONS: LazyLock<Migrations<'static>> = LazyLock::new(|| {
-    Migrations::new(vec![M::up(include_str!(
-        "sql/migrations/initial-migration.sql"
-    ))])
+    Migrations::new(vec![
+        M::up(include_str!("sql/migrations/initial-migration.sql")),
+        M::up(include_str!("sql/migrations/1-chapterOrdering.sql")),
+    ])
 });
 
 #[derive(Debug)]
@@ -29,6 +30,11 @@ const CHAPTER_ORDER_QUERY: &str =
 //     "INSERT INTO chapter (file_path, chapter_number, read, pages, comic_id, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
 const CHAPTER_UPSERT: &str = include_str!("sql/upsert_chapter.sql");
 const CHAPTER_PAGE_UPDATE: &str = "UPDATE chapter SET read = (?2) WHERE id = (?1)";
+
+const CHAPTER_ORDERING_QUERY: &str =
+    "SELECT id, comic_id, rank, regex FROM chapterordering WHERE comic_id = (?1) ORDER BY rank";
+const CHAPTER_ORDER_INSERT: &str =
+    "INSERT INTO chapterordering (comic_id, rank, regex) VALUES (?1, ?2, ?3)";
 
 impl Database {
     pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
@@ -74,6 +80,14 @@ impl Database {
             [comic_id, chapter_number],
             chapter_from_row,
         )
+    }
+
+    pub fn chapter_orderings(&self, comic_id: u32) -> Result<Vec<ChapterOrdering>> {
+        let mut query = self.conn.prepare(CHAPTER_ORDERING_QUERY)?;
+
+        let mut orderings = query.query_map([comic_id], chapter_order_from_row)?;
+
+        orderings.try_collect()
     }
 
     pub fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
@@ -131,6 +145,15 @@ impl Database {
 
         Ok(())
     }
+
+    pub fn insert_chapter_ordering(&mut self, ordering: &ChapterOrdering) -> Result<()> {
+        self.conn
+            .execute(
+                CHAPTER_ORDER_INSERT,
+                params![ordering.comic_id, ordering.rank, ordering.regex],
+            )
+            .map(|_| ())
+    }
 }
 fn comic_from_row(r: &rusqlite::Row) -> Result<Comic> {
     Ok(Comic {
@@ -154,6 +177,15 @@ fn chapter_from_row(r: &rusqlite::Row) -> Result<Chapter> {
         pages: r.get(4)?,
         comic_id: r.get(5)?,
         name: r.get(6)?,
+    })
+}
+
+fn chapter_order_from_row(r: &rusqlite::Row) -> Result<ChapterOrdering> {
+    Ok(ChapterOrdering {
+        id: r.get(0)?,
+        comic_id: r.get(1)?,
+        rank: r.get(2)?,
+        regex: r.get(3)?,
     })
 }
 
