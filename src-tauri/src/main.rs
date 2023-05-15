@@ -161,6 +161,17 @@ fn delete_ordering(id: u32, library: State<'_, LibState>) -> Result<(), String> 
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn update_ordering(ordering: ChapterOrdering, library: State<'_, LibState>) -> Result<(), String> {
+    library
+        .0
+        .lock()
+        .map_err(|e| e.to_string())?
+        .database
+        .update_chapter_ordering(&ordering)
+        .map_err(|e| e.to_string())
+}
+
 fn main() -> anyhow::Result<()> {
     let library = library::Library::new("/media/manga/")?;
     let state = Arc::new(Mutex::new(library));
@@ -177,6 +188,7 @@ fn main() -> anyhow::Result<()> {
             chapter_orderings,
             insert_ordering,
             delete_ordering,
+            update_ordering,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

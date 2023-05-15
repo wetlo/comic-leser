@@ -39,6 +39,8 @@ const CHAPTER_ORDER_INSERT: &str =
     "INSERT INTO chapterordering (comic_id, rank, regex) VALUES (?1, ?2, ?3)";
 const CHAPTER_ORDER_DELETE: &str = "DELETE FROM chapterordering WHERE id = (?1)";
 const CHAPTER_ORDER_DECREMENT: &str = include_str!("sql/decrement_rank_ordering.sql");
+const CHAPTER_ORDER_UPDATE: &str =
+    "UPDATE chapterordering SET regex = (?2), rank = (?3) WHERE id = (?1)";
 
 impl Database {
     pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
@@ -105,6 +107,12 @@ impl Database {
     pub fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
         self.conn
             .execute(CHAPTER_PAGE_UPDATE, [chapter_id, page])
+            .map(|_| ())
+    }
+
+    pub fn update_chapter_ordering(&mut self, o: &ChapterOrdering) -> Result<()> {
+        self.conn
+            .execute(CHAPTER_ORDER_UPDATE, params![o.id, o.regex, o.rank])
             .map(|_| ())
     }
 
