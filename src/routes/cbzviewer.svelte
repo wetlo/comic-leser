@@ -119,17 +119,22 @@
     }
 
     .header {
-        position: relative;        
+        position: relative;
         top: -10vh;
-        transition: top 200ms;  
+        transition: top 200ms;
     }
 
     .header > div {
         height: 10vh;
 
         color: lightgray;
-        background: rgb(25,25,25);
-        background: linear-gradient(0deg, rgba(25,25,25,0) 0%, rgba(25,25,25,0.7749300403755253) 46%, rgba(0,0,0,1) 100%); 
+        background: rgb(25, 25, 25);
+        background: linear-gradient(
+            0deg,
+            rgba(25, 25, 25, 0) 0%,
+            rgba(25, 25, 25, 0.7749300403755253) 46%,
+            rgba(0, 0, 0, 1) 100%
+        );
     }
 
     .hide-zone {
