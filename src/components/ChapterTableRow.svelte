@@ -1,19 +1,23 @@
 <script lang="ts">
+    import { updateChapterReadStatus } from "../api/api";
     import type { Chapter } from "../entities/Chapter";
     import InplaceEdit from "./InplaceEdit.svelte";
 
     export let chapter: Chapter;
     export let toggleChecked: (c: Chapter) => void;
 
-    let status = chapter.read;
+    let lastRead = chapter.read;
     let read = chapter.read;
 
-    $: if (!isNaN(read) && status != read) {
+    // only run on read updated
+    $: if (!isNaN(read) && lastRead != read) {
 
         if (read > chapter.pages)
             read = chapter.pages;
 
-        status = read;
+        lastRead = read;
+        updateChapterReadStatus(chapter.id, read);
+        // somehow update comic?
     }
 
     function getChapterLink(c: Chapter): string {
