@@ -127,6 +127,7 @@ button:focus {
 }
 
 [data-tooltip]::after {
+	display: none;
 	position: absolute;
 	left: 50%;
 	transform: translateX(-50%);
@@ -148,5 +149,6 @@ button:focus {
 }
 
 [data-tooltip]:hover::after {
+	display: block;
 	opacity: 1;
 }

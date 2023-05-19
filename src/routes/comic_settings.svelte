@@ -105,7 +105,10 @@
                 <td />
                 <td />
                 <td>
-                    <IconButton on:click={addEmptyOrder}>
+                    <IconButton
+                        on:click={addEmptyOrder}
+                        tooltip="add new ordering"
+                    >
                         <PlusIcon />
                     </IconButton>
                 </td>

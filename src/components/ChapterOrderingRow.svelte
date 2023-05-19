@@ -17,7 +17,7 @@
 </script>
 
 <tr>
-    <td>
+    <td data-tooltip="Drag'n'Drop to adjust ordering">
         <MenuIcon />
     </td>
 
@@ -28,7 +28,7 @@
     <td>{ordering.rank}</td>
 
     <td>
-        <IconButton on:click={handleDelete}>
+        <IconButton on:click={handleDelete} tooltip="delete the ordering">
             <TrashIcon />
         </IconButton>
     </td>
