@@ -77,7 +77,6 @@
             <thead>
                 <th />
                 <th style="text-align: left;">Regex</th>
-                <th />
                 <th>#</th>
                 <th />
             </thead>
@@ -102,7 +101,6 @@
                         placeholder="Regex for new ordering"
                     />
                 </td>
-                <td />
                 <td />
                 <td>
                     <IconButton

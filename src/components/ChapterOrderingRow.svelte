@@ -24,7 +24,6 @@
     <td>
         <InplaceTextEdit bind:value={ordering.regex} />
     </td>
-    <td />
     <td>{ordering.rank}</td>
 
     <td>
