@@ -16,20 +16,17 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-//use anyhow::Result;
-use entities::{Chapter, ChapterOrdering, Comic};
-use library::Library;
+use api::LibState;
 use tauri::{
     http::{self, ResponseBuilder},
-    AppHandle, Runtime, State,
+    AppHandle, Runtime,
 };
 use url::Url;
 
+mod api;
 mod db;
 mod entities;
 mod library;
-
-struct LibState(Arc<Mutex<Library>>);
 
 fn get_comic_page<R: Runtime>(
     _app: &AppHandle<R>,
@@ -66,112 +63,6 @@ fn get_comic_page<R: Runtime>(
         .body(content)
 }
 
-#[tauri::command]
-fn all_comics(library: State<'_, LibState>) -> Result<Vec<Comic>, String> {
-    library
-        .0
-        .lock()
-        .unwrap()
-        .database
-        .comics()
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .comic_with_chapters(id)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn comic(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .comic(id)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn chapter(
-    comic_id: u32,
-    chapter_number: u32,
-    library: State<'_, LibState>,
-) -> Result<Chapter, String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .chapter_by_number(comic_id, chapter_number)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn chapter_page_update(id: u32, page: u32, library: State<'_, LibState>) -> Result<(), String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .update_chapter_page(id, page)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn chapter_orderings(
-    comic_id: u32,
-    library: State<'_, LibState>,
-) -> Result<Vec<ChapterOrdering>, String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .chapter_orderings(comic_id)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn insert_ordering(ordering: ChapterOrdering, library: State<'_, LibState>) -> Result<(), String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .insert_chapter_ordering(&ordering)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn delete_ordering(id: u32, library: State<'_, LibState>) -> Result<(), String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .delete_chapter_ordering(id)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn update_ordering(ordering: ChapterOrdering, library: State<'_, LibState>) -> Result<(), String> {
-    library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
-        .database
-        .update_chapter_ordering(&ordering)
-        .map_err(|e| e.to_string())
-}
-
 fn main() -> anyhow::Result<()> {
     let library = library::Library::new("/media/manga/")?;
     let state = Arc::new(Mutex::new(library));
@@ -179,17 +70,7 @@ fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .manage(LibState(state))
         .register_uri_scheme_protocol("comic", get_comic_page)
-        .invoke_handler(tauri::generate_handler![
-            all_comics,
-            comic_with_chapters,
-            comic,
-            chapter,
-            chapter_page_update,
-            chapter_orderings,
-            insert_ordering,
-            delete_ordering,
-            update_ordering,
-        ])
+        .invoke_handler(api::get_invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
