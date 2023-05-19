@@ -16,36 +16,30 @@
     }
 </script>
 
-<div class="flex space-between v-center row">
-    <MenuIcon />
-    <div class="regex">
-        <InplaceTextEdit bind:value={ordering.regex} />
-    </div>
-    <span />
-    <span>{ordering.rank}</span>
+<tr>
+    <td>
+        <MenuIcon />
+    </td>
 
-    <IconButton on:click={handleDelete}>
-        <TrashIcon />
-    </IconButton>
-</div>
+    <td>
+        <InplaceTextEdit bind:value={ordering.regex} />
+    </td>
+    <td />
+    <td>{ordering.rank}</td>
+
+    <td>
+        <IconButton on:click={handleDelete}>
+            <TrashIcon />
+        </IconButton>
+    </td>
+</tr>
 
 <style>
-    .regex {
-    }
-
-    .row {
-        display: grid;
-        grid-template-columns: 10% 40% 40% 5% 5%;
-
-        max-width: 50em;
-        margin: 0 auto;
-    }
-
-    .row > * {
-        align-self: center;
-    }
-
-    .row:nth-child(even) {
+    tr:nth-child(even) {
         background-color: #111;
+    }
+
+    td {
+        padding: 0;
     }
 </style>

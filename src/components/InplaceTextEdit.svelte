@@ -2,15 +2,29 @@
     export let value: string;
     export let pattern: string | undefined = undefined;
     export let widthAdjusting: boolean = false;
+    export let placeholder: string = "";
 
     let width = "2ch";
     $: if (widthAdjusting) width = value.length + "ch";
 </script>
 
 {#if widthAdjusting}
-    <input style="width: {width}" type="text" bind:value {pattern} />
+    <input
+        style="width: {width}"
+        type="text"
+        bind:value
+        {pattern}
+        {placeholder}
+        class={$$props.class}
+    />
 {:else}
-    <input type="text" bind:value {pattern} />
+    <input
+        type="text"
+        bind:value
+        {pattern}
+        {placeholder}
+        class={$$props.class}
+    />
 {/if}
 
 <style>
@@ -30,5 +44,9 @@
         border-bottom: solid 1px;
         color: inherit;
         outline: none;
+    }
+
+    input::placeholder {
+        color: #555;
     }
 </style>
