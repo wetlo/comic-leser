@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TrashIcon } from "svelte-feather-icons";
+    import { MenuIcon, TrashIcon } from "svelte-feather-icons";
     import type { ChapterOrdering } from "../entities/ChapterOrdering";
     import IconButton from "./IconButton.svelte";
     import InplaceTextEdit from "./InplaceTextEdit.svelte";
@@ -16,11 +16,14 @@
     }
 </script>
 
-<div class="flex space-between">
+<div class="flex space-between v-center row">
+    <MenuIcon />
     <div class="regex">
         <InplaceTextEdit bind:value={ordering.regex} />
     </div>
+    <span />
     <span>{ordering.rank}</span>
+
     <IconButton on:click={handleDelete}>
         <TrashIcon />
     </IconButton>
@@ -28,6 +31,21 @@
 
 <style>
     .regex {
-        max-width: 40vw;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 10% 40% 40% 5% 5%;
+
+        max-width: 50em;
+        margin: 0 auto;
+    }
+
+    .row > * {
+        align-self: center;
+    }
+
+    .row:nth-child(even) {
+        background-color: #111;
     }
 </style>
