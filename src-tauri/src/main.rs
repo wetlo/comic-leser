@@ -7,14 +7,7 @@
     windows_subsystem = "windows"
 )]
 
-use std::{
-    error::Error,
-    fs::File,
-    io::BufReader,
-    io::Read,
-    path::Path,
-    sync::{Arc, Mutex},
-};
+use std::{error::Error, fs::File, io::BufReader, io::Read, path::Path};
 
 use api::LibState;
 use settings::Settings;
@@ -68,10 +61,9 @@ fn get_comic_page<R: Runtime>(
 fn main() -> anyhow::Result<()> {
     let settings = Settings::load_from_config()?;
     let library = library::Library::new(settings.comic_path)?;
-    let state = Arc::new(Mutex::new(library));
 
     tauri::Builder::default()
-        .manage(LibState(state))
+        .manage(LibState::from_lib(library))
         .register_uri_scheme_protocol("comic", get_comic_page)
         .invoke_handler(api::get_invoke_handler())
         .run(tauri::generate_context!())

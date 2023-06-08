@@ -23,8 +23,6 @@ percent-encoding = "2.1.0"
 zip = "0.6.2"
 
 anyhow = "1.0.58"
-
-lazy_static = "1.4.0"
 itertools = "0.10"
 
 rusqlite = { version = "0.28.0", features = ["bundled"] }

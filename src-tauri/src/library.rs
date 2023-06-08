@@ -23,15 +23,6 @@ static CHAPTER_NUMBER_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::Regex::new(r"(\d+)\.?|\.?(\d+)").expect("invalid chapter number regex")
 });
 
-#[derive(Debug)]
-struct NoFilePathToSqlite;
-impl std::error::Error for NoFilePathToSqlite {}
-impl std::fmt::Display for NoFilePathToSqlite {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 impl Library {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let db_path = path.as_ref().join(".comicdb");
@@ -60,8 +51,8 @@ impl Library {
         for c in scanned_comics {
             let lib_comic = lib_comics.iter().find(|l| l.dir_path == c.dir_path);
 
-            if lib_comic.is_some() {
-                new_chapters.extend(self.get_new_chaps_for(lib_comic.unwrap(), c)?)
+            if let Some(lib_comic) = lib_comic {
+                new_chapters.extend(self.get_new_chaps_for(lib_comic, c)?)
             } else {
                 new_comics.push(c)
             }
@@ -77,8 +68,8 @@ impl Library {
 
         dbg!(&new_chapters);
 
-        self.database.insert_comics(&new_comics)?; // add the new comic
-        self.database.insert_chapters(&new_chapters, None)?;
+        self.database.insert_comics(&new_comics)?; // add the new comics
+        self.database.insert_chapters(&new_chapters)?;
 
         Ok(())
     }
@@ -107,59 +98,48 @@ impl Library {
 
     /// scan the comic directory, to get every comic + chapter inside
     fn scan(&mut self) -> Result<Vec<Comic>> {
-        let db_comics = self
-            .database
-            .comics()?
-            .into_iter()
-            .map(|c| (c.dir_path.clone(), c))
-            .collect::<HashMap<PathBuf, Comic>>();
+        let db_comics = self.comic_path_hashmap()?;
 
         let comics = read_entries_with_file_type(&self.path, is_not_hidden, |t| t.is_dir())?
             // only use entries with valid paths
             .filter_map(|d| Some(d.ok()?.path()))
             // create comic from entry
             .map(|d| self.create_scanned_comic(d, &db_comics))
-            .collect_vec();
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(comics)
     }
 
-    fn create_scanned_comic(&self, d: PathBuf, db_comics: &HashMap<PathBuf, Comic>) -> Comic {
+    fn create_scanned_comic(
+        &self,
+        d: PathBuf,
+        db_comics: &HashMap<PathBuf, Comic>,
+    ) -> Result<Comic> {
         let id = db_comics.get(&d).map(|c| c.id).unwrap_or_default();
-        Comic {
+        Ok(Comic {
             id,
             name: d
                 .file_name()
-                .map_or(String::from(""), |n| n.to_string_lossy().to_string()),
-            chapters: self
-                .scan_chapters(&d, id, 1)
-                .expect("couldn't read comic chapters"),
+                .expect("comic path returns in ..")
+                .to_string_lossy()
+                .to_string(),
+            chapters: self.scan_chapters(&d, id)?,
             chapter_count: None,
             chapter_read: None,
             is_manga: self.is_manga_db,
             cover_path: None,
             dir_path: d,
-        }
+        })
     }
 
     /// get the chapters inside a comic directory
-    fn scan_chapters<P: AsRef<Path>>(
-        &self,
-        path: P,
-        comic_id: u32,
-        chapter_number: u32,
-    ) -> Result<Vec<Chapter>> {
-        let mut chap_num = chapter_number;
-        let chapter_orderings = self
-            .database
-            .chapter_orderings(comic_id)?
-            .into_iter()
-            .map(|o| regex::Regex::new(&o.regex))
-            .collect::<Result<Vec<_>, _>>()?;
+    fn scan_chapters<P: AsRef<Path>>(&self, path: P, comic_id: u32) -> Result<Vec<Chapter>> {
+        let mut chap_num = 1;
+        let chapter_orderings = self.get_chapter_orderings(comic_id)?;
 
         let chaps = read_entries_with_file_type(
             path,
-            |f| f.extension().is_some_and(|e| e.to_string_lossy() == "cbz"),
+            |f| f.extension().is_some_and(|e| e == "cbz"),
             |t| t.is_file(),
         )?
         .map(|r| r.unwrap().path())
@@ -211,6 +191,24 @@ impl Library {
         num_matches.insert(0, ordering.unwrap_or(u32::MAX));
         num_matches
     }
+
+    fn comic_path_hashmap(&self) -> Result<HashMap<PathBuf, Comic>> {
+        Ok(self
+            .database
+            .comics()?
+            .into_iter()
+            .map(|c| (c.dir_path.clone(), c))
+            .collect())
+    }
+
+    fn get_chapter_orderings(&self, comic_id: u32) -> Result<Vec<regex::Regex>> {
+        Ok(self
+            .database
+            .chapter_orderings(comic_id)?
+            .into_iter()
+            .map(|o| regex::Regex::new(&o.regex))
+            .collect::<Result<_, _>>()?)
+    }
 }
 
 fn read_entries_with_file_type<P, FT, FE>(
@@ -220,15 +218,15 @@ fn read_entries_with_file_type<P, FT, FE>(
 ) -> Result<impl Iterator<Item = std::io::Result<DirEntry>>>
 where
     P: AsRef<Path>,
-    FT: Fn(&FileType) -> bool + Copy,
-    FE: Fn(&Path) -> bool + Copy,
+    FT: Fn(&FileType) -> bool,
+    FE: Fn(&Path) -> bool,
 {
     let entries = std::fs::read_dir(path)?;
 
     let result = entries.filter(move |f| {
         f.as_ref()
             .ok()
-            .and_then(|f| Some((f.path(), f.file_type().ok()?)))
+            .and_then(|f| Some((f.path(), f.file_type().ok()?))) // handle errors before preds
             .is_some_and(|(f, t)| pred_type(&t) && pred_entry(&f))
     });
 

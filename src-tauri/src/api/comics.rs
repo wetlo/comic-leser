@@ -7,9 +7,7 @@ use super::LibState;
 #[tauri::command]
 pub fn all_comics(library: State<'_, LibState>) -> Result<Vec<Comic>, String> {
     library
-        .0
-        .lock()
-        .unwrap()
+        .access()?
         .database
         .comics()
         .map_err(|e| e.to_string())
@@ -18,9 +16,7 @@ pub fn all_comics(library: State<'_, LibState>) -> Result<Vec<Comic>, String> {
 #[tauri::command]
 pub fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
     library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
+        .access()?
         .database
         .comic_with_chapters(id)
         .map_err(|e| e.to_string())
@@ -29,9 +25,7 @@ pub fn comic_with_chapters(id: u32, library: State<'_, LibState>) -> Result<Comi
 #[tauri::command]
 pub fn comic(id: u32, library: State<'_, LibState>) -> Result<Comic, String> {
     library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
+        .access()?
         .database
         .comic(id)
         .map_err(|e| e.to_string())

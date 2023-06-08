@@ -89,7 +89,6 @@ dependencies = [
  "anyhow",
  "directories",
  "itertools",
- "lazy_static",
  "percent-encoding",
  "regex",
  "rusqlite",

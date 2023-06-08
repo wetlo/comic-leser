@@ -137,9 +137,9 @@ impl Database {
         Ok(())
     }
 
-    pub fn insert_chapters(&mut self, chapters: &[Chapter], comic_id: Option<u32>) -> Result<()> {
+    pub fn insert_chapters(&mut self, chapters: &[Chapter]) -> Result<()> {
         let tx = self.conn.transaction()?;
-        Self::insert_chapters_transaction(&tx, chapters, comic_id)?;
+        Self::insert_chapters_transaction(&tx, chapters, None)?;
         tx.commit()?;
         Ok(())
     }

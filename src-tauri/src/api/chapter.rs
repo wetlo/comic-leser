@@ -11,9 +11,7 @@ pub fn chapter(
     library: State<'_, LibState>,
 ) -> Result<Chapter, String> {
     library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
+        .access()?
         .database
         .chapter_by_number(comic_id, chapter_number)
         .map_err(|e| e.to_string())
@@ -22,9 +20,7 @@ pub fn chapter(
 #[tauri::command]
 pub fn chapter_page_update(id: u32, page: u32, library: State<'_, LibState>) -> Result<(), String> {
     library
-        .0
-        .lock()
-        .map_err(|e| e.to_string())?
+        .access()?
         .database
         .update_chapter_page(id, page)
         .map_err(|e| e.to_string())
