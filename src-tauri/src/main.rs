@@ -58,9 +58,10 @@ fn get_comic_page<R: Runtime>(
         .body(content)
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let settings = Settings::load_from_config()?;
-    let library = library::Library::new(settings.comic_path)?;
+    let library = library::Library::new(settings.comic_path).await?;
 
     tauri::Builder::default()
         .manage(LibState::from_lib(library))

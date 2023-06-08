@@ -24,9 +24,9 @@ static CHAPTER_NUMBER_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
 });
 
 impl Library {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub async fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let db_path = path.as_ref().join(".comicdb");
-        let database = Database::new(db_path)?;
+        let database = Database::new(db_path).await?;
 
         let mut library = Self {
             is_manga_db: true,
@@ -34,16 +34,16 @@ impl Library {
             database,
         };
 
-        library.update()?;
+        library.update().await?;
 
         Ok(library)
     }
 
     /// scan the library directory for new comics/chapters and update the database
-    fn update(&mut self) -> Result<()> {
-        let lib_comics = self.database.comics()?;
+    async fn update(&mut self) -> Result<()> {
+        let lib_comics = self.database.comics().await?;
         // TODO: handle deletion
-        let scanned_comics = self.scan()?;
+        let scanned_comics = self.scan().await?;
 
         let mut new_comics = vec![];
         let mut new_chapters = vec![];
@@ -52,7 +52,7 @@ impl Library {
             let lib_comic = lib_comics.iter().find(|l| l.dir_path == c.dir_path);
 
             if let Some(lib_comic) = lib_comic {
-                new_chapters.extend(self.get_new_chaps_for(lib_comic, c)?)
+                new_chapters.extend(self.get_new_chaps_for(lib_comic, c).await?)
             } else {
                 new_comics.push(c)
             }
@@ -68,15 +68,19 @@ impl Library {
 
         dbg!(&new_chapters);
 
-        self.database.insert_comics(&new_comics)?; // add the new comics
-        self.database.insert_chapters(&new_chapters)?;
+        self.database.insert_comics(new_comics).await?; // add the new comics
+        self.database.insert_chapters(new_chapters).await?;
 
         Ok(())
     }
 
     /// compare the db chapters of a comic and the scanned chapter to get the new chapters
-    fn get_new_chaps_for(&self, lib_comic: &Comic, scanned: Comic) -> Result<Vec<Chapter>> {
-        let db_chaps = self.database.comic_with_chapters(lib_comic.id)?.chapters;
+    async fn get_new_chaps_for(&self, lib_comic: &Comic, scanned: Comic) -> Result<Vec<Chapter>> {
+        let db_chaps = self
+            .database
+            .comic_with_chapters(lib_comic.id)
+            .await?
+            .chapters;
 
         let new = scanned
             .chapters
@@ -97,20 +101,21 @@ impl Library {
     }
 
     /// scan the comic directory, to get every comic + chapter inside
-    fn scan(&mut self) -> Result<Vec<Comic>> {
-        let db_comics = self.comic_path_hashmap()?;
+    async fn scan(&mut self) -> Result<Vec<Comic>> {
+        let db_comics = self.comic_path_hashmap().await?;
 
         let comics = read_entries_with_file_type(&self.path, is_not_hidden, |t| t.is_dir())?
             // only use entries with valid paths
             .filter_map(|d| Some(d.ok()?.path()))
             // create comic from entry
-            .map(|d| self.create_scanned_comic(d, &db_comics))
-            .collect::<Result<Vec<_>>>()?;
+            .map(|d| self.create_scanned_comic(d, &db_comics));
 
-        Ok(comics)
+        futures::future::try_join_all(comics).await
+
+        //Ok(comics)
     }
 
-    fn create_scanned_comic(
+    async fn create_scanned_comic(
         &self,
         d: PathBuf,
         db_comics: &HashMap<PathBuf, Comic>,
@@ -123,7 +128,7 @@ impl Library {
                 .expect("comic path returns in ..")
                 .to_string_lossy()
                 .to_string(),
-            chapters: self.scan_chapters(&d, id)?,
+            chapters: self.scan_chapters(&d, id).await?,
             chapter_count: None,
             chapter_read: None,
             is_manga: self.is_manga_db,
@@ -133,9 +138,9 @@ impl Library {
     }
 
     /// get the chapters inside a comic directory
-    fn scan_chapters<P: AsRef<Path>>(&self, path: P, comic_id: u32) -> Result<Vec<Chapter>> {
+    async fn scan_chapters<P: AsRef<Path>>(&self, path: P, comic_id: u32) -> Result<Vec<Chapter>> {
         let mut chap_num = 1;
-        let chapter_orderings = self.get_chapter_orderings(comic_id)?;
+        let chapter_orderings = self.get_chapter_orderings(comic_id).await?;
 
         let chaps = read_entries_with_file_type(
             path,
@@ -192,19 +197,21 @@ impl Library {
         num_matches
     }
 
-    fn comic_path_hashmap(&self) -> Result<HashMap<PathBuf, Comic>> {
+    async fn comic_path_hashmap(&self) -> Result<HashMap<PathBuf, Comic>> {
         Ok(self
             .database
-            .comics()?
+            .comics()
+            .await?
             .into_iter()
             .map(|c| (c.dir_path.clone(), c))
             .collect())
     }
 
-    fn get_chapter_orderings(&self, comic_id: u32) -> Result<Vec<regex::Regex>> {
+    async fn get_chapter_orderings(&self, comic_id: u32) -> Result<Vec<regex::Regex>> {
         Ok(self
             .database
-            .chapter_orderings(comic_id)?
+            .chapter_orderings(comic_id)
+            .await?
             .into_iter()
             .map(|o| regex::Regex::new(&o.regex))
             .collect::<Result<_, _>>()?)

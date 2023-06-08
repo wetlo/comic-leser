@@ -1,4 +1,6 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
+
+use tokio::sync::{Mutex, MutexGuard};
 
 use crate::library::Library;
 
@@ -12,8 +14,8 @@ impl LibState {
         LibState(Arc::new(Mutex::new(lib)))
     }
 
-    pub fn access(&'_ self) -> Result<MutexGuard<'_, Library>, String> {
-        self.0.lock().map_err(|e| e.to_string())
+    pub async fn access(&'_ self) -> Result<MutexGuard<'_, Library>, String> {
+        Ok(self.0.lock().await)
     }
 }
 

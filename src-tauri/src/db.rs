@@ -1,7 +1,8 @@
 use std::{path::Path, sync::LazyLock};
 
-use rusqlite::{params, Connection, Result};
+use rusqlite::params;
 use rusqlite_migration::{Migrations, M};
+use tokio_rusqlite::{Connection, Result};
 
 use crate::entities::{Chapter, ChapterOrdering, Comic};
 
@@ -43,148 +44,221 @@ const CHAPTER_ORDER_UPDATE: &str =
     "UPDATE chapterordering SET regex = (?2), rank = (?3) WHERE id = (?1)";
 
 impl Database {
-    pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let mut conn = Connection::open(path)?;
-        MIGRATIONS.to_latest(&mut conn)?;
+    pub async fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+        let conn = Connection::open(path).await?;
+
+        conn.call(|c| {
+            MIGRATIONS
+                .to_latest(c)
+                .map_err(|_| rusqlite::Error::InvalidQuery) // wait for github.com/programatik29/tokio-rusqlite/issues/18
+        })
+        .await?;
 
         Ok(Self { conn })
     }
 
-    fn _from_conn(mut conn: Connection) -> anyhow::Result<Self> {
-        MIGRATIONS.to_latest(&mut conn)?;
+    async fn _from_conn(conn: Connection) -> anyhow::Result<Self> {
+        conn.call(|c| {
+            MIGRATIONS
+                .to_latest(c)
+                .map_err(|_| rusqlite::Error::InvalidQuery) // wait for github.com/programatik29/tokio-rusqlite/issues/18
+        })
+        .await?;
 
         Ok(Self { conn })
     }
 
-    pub fn comics(&self) -> Result<Vec<Comic>> {
-        let mut query = self.conn.prepare(COMIC_QUERY)?;
-
-        let mut comics = query.query_map([], comic_from_row)?;
-
-        comics.try_collect::<Vec<Comic>>()
-    }
-
-    pub fn comic(&self, comic_id: u32) -> Result<Comic> {
+    pub async fn comics(&self) -> Result<Vec<Comic>> {
         self.conn
-            .query_row(COMIC_QUERY_ID, [comic_id], comic_from_row)
+            .call(|c| {
+                let mut query = c.prepare(COMIC_QUERY)?;
+                let mut comics = query.query_map([], comic_from_row)?;
+                comics.try_collect::<Vec<Comic>>()
+            })
+            .await
     }
 
-    pub fn comic_with_chapters(&self, comic_id: u32) -> Result<Comic> {
-        let mut comic = self.comic(comic_id)?;
-
-        let chaps = self
-            .conn
-            .prepare(CHAPTER_QUERY)?
-            .query_map([comic_id], chapter_from_row)?
-            .try_collect::<Vec<_>>()?;
-
-        comic.chapters = chaps;
-
-        Ok(comic)
-    }
-
-    pub fn chapter_by_number(&self, comic_id: u32, chapter_number: u32) -> Result<Chapter> {
-        self.conn.query_row(
-            CHAPTER_ORDER_QUERY,
-            [comic_id, chapter_number],
-            chapter_from_row,
-        )
-    }
-
-    pub fn chapter_orderings(&self, comic_id: u32) -> Result<Vec<ChapterOrdering>> {
-        let mut query = self.conn.prepare(CHAPTER_ORDERING_QUERY)?;
-
-        let mut orderings = query.query_map([comic_id], chapter_order_from_row)?;
-
-        orderings.try_collect()
-    }
-
-    pub fn chapter_ordering(&self, id: u32) -> Result<ChapterOrdering> {
+    pub async fn comic(&self, comic_id: u32) -> Result<Comic> {
         self.conn
-            .query_row(CHAPTER_ORDERING_BY_ID, [id], chapter_order_from_row)
+            .call(move |c| c.query_row(COMIC_QUERY_ID, [comic_id], comic_from_row))
+            .await
     }
 
-    pub fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
+    pub async fn comic_with_chapters(&self, comic_id: u32) -> Result<Comic> {
+        let mut comic = self.comic(comic_id).await?;
         self.conn
-            .execute(CHAPTER_PAGE_UPDATE, [chapter_id, page])
-            .map(|_| ())
+            .call(move |c| {
+                let chaps = c
+                    .prepare(CHAPTER_QUERY)?
+                    .query_map([comic_id], chapter_from_row)?
+                    .try_collect::<Vec<_>>()?;
+
+                comic.chapters = chaps;
+
+                Ok(comic)
+            })
+            .await
     }
 
-    pub fn update_chapter_ordering(&mut self, o: &ChapterOrdering) -> Result<()> {
+    pub async fn chapter_by_number(&self, comic_id: u32, chapter_number: u32) -> Result<Chapter> {
         self.conn
-            .execute(CHAPTER_ORDER_UPDATE, params![o.id, o.regex, o.rank])
-            .map(|_| ())
+            .call(move |c| {
+                c.query_row(
+                    CHAPTER_ORDER_QUERY,
+                    [comic_id, chapter_number],
+                    chapter_from_row,
+                )
+            })
+            .await
     }
 
-    pub fn insert_comics(&mut self, comics: &[Comic]) -> Result<()> {
-        let tx = self.conn.transaction()?;
-        let mut insert = tx.prepare(COMIC_INSERT)?;
-
-        for c in comics {
-            let id = insert.insert(params![
-                c.dir_path.to_string_lossy(),
-                c.name,
-                c.cover_path.as_ref().map(|p| p.to_string_lossy()),
-                c.is_manga,
-            ])?;
-
-            Self::insert_chapters_transaction(&tx, &c.chapters, Some(id as u32))?;
-        }
-
-        drop(insert);
-        tx.commit()?;
-
-        Ok(())
-    }
-
-    pub fn insert_chapters(&mut self, chapters: &[Chapter]) -> Result<()> {
-        let tx = self.conn.transaction()?;
-        Self::insert_chapters_transaction(&tx, chapters, None)?;
-        tx.commit()?;
-        Ok(())
-    }
-
-    fn insert_chapters_transaction(
-        tx: &rusqlite::Transaction,
-        chapters: &[Chapter],
-        comic_id: Option<u32>,
-    ) -> Result<()> {
-        let mut insert = tx.prepare(CHAPTER_UPSERT)?;
-
-        for c in chapters {
-            let comic = comic_id.unwrap_or(c.comic_id);
-            insert.insert(params![
-                c.path.to_string_lossy(),
-                c.chapter_number,
-                c.read,
-                c.pages,
-                comic,
-                c.name,
-            ])?;
-        }
-
-        Ok(())
-    }
-
-    pub fn insert_chapter_ordering(&mut self, ordering: &ChapterOrdering) -> Result<()> {
+    pub async fn chapter_orderings(&self, comic_id: u32) -> Result<Vec<ChapterOrdering>> {
         self.conn
-            .execute(
-                CHAPTER_ORDER_INSERT,
-                params![ordering.comic_id, ordering.rank, ordering.regex],
-            )
-            .map(|_| ())
+            .call(move |c| {
+                let mut query = c.prepare(CHAPTER_ORDERING_QUERY)?;
+
+                let mut orderings = query.query_map([comic_id], chapter_order_from_row)?;
+
+                orderings.try_collect()
+            })
+            .await
     }
 
-    pub fn delete_chapter_ordering(&mut self, id: u32) -> Result<()> {
-        let order = self.chapter_ordering(id)?;
-        self.conn.execute(CHAPTER_ORDER_DELETE, params![id])?;
+    pub async fn chapter_ordering(&self, id: u32) -> Result<ChapterOrdering> {
+        self.conn
+            .call(move |c| c.query_row(CHAPTER_ORDERING_BY_ID, [id], chapter_order_from_row))
+            .await
+    }
+
+    pub async fn update_chapter_page(&mut self, chapter_id: u32, page: u32) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                c.execute(CHAPTER_PAGE_UPDATE, [chapter_id, page])
+                    .map(|_| ())
+            })
+            .await
+    }
+
+    pub async fn update_chapter_ordering(&mut self, o: ChapterOrdering) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                c.execute(CHAPTER_ORDER_UPDATE, params![o.id, o.regex, o.rank])
+                    .map(|_| ())
+            })
+            .await
+    }
+
+    pub async fn insert_comics(&mut self, comics: Vec<Comic>) -> Result<()> {
+        self.conn
+            .call(|c| {
+                let tx = c.transaction()?;
+                let mut insert = tx.prepare(COMIC_INSERT)?;
+
+                for c in comics {
+                    let id = insert.insert(params![
+                        c.dir_path.to_string_lossy(),
+                        c.name,
+                        c.cover_path.as_ref().map(|p| p.to_string_lossy()),
+                        c.is_manga,
+                    ])?;
+
+                    //Self::insert_chapters_transaction(&tx, &c.chapters, Some(id as u32))?;
+
+                    let mut insert = tx.prepare(CHAPTER_UPSERT)?;
+
+                    for c in c.chapters {
+                        let comic = id;
+                        insert.insert(params![
+                            c.path.to_string_lossy(),
+                            c.chapter_number,
+                            c.read,
+                            c.pages,
+                            comic,
+                            c.name,
+                        ])?;
+                    }
+                }
+
+                drop(insert);
+                tx.commit()?;
+
+                Ok(())
+            })
+            .await
+    }
+
+    pub async fn insert_chapters(&mut self, chapters: Vec<Chapter>) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                let tx = c.transaction()?;
+                let mut insert = tx.prepare(CHAPTER_UPSERT)?;
+
+                for c in chapters {
+                    let comic = c.comic_id;
+                    insert.insert(params![
+                        c.path.to_string_lossy(),
+                        c.chapter_number,
+                        c.read,
+                        c.pages,
+                        comic,
+                        c.name,
+                    ])?;
+                }
+                drop(insert);
+                tx.commit()?;
+                Ok(())
+            })
+            .await
+    }
+
+    // fn insert_chapters_transaction(
+    //     tx: &rusqlite::Transaction,
+    //     chapters: &[Chapter],
+    //     comic_id: Option<u32>,
+    // ) -> Result<()> {
+    //     let mut insert = tx.prepare(CHAPTER_UPSERT)?;
+
+    //     for c in chapters {
+    //         let comic = comic_id.unwrap_or(c.comic_id);
+    //         insert.insert(params![
+    //             c.path.to_string_lossy(),
+    //             c.chapter_number,
+    //             c.read,
+    //             c.pages,
+    //             comic,
+    //             c.name,
+    //         ])?;
+    //     }
+
+    //     Ok(())
+    // }
+
+    pub async fn insert_chapter_ordering(&mut self, ordering: ChapterOrdering) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                c.execute(
+                    CHAPTER_ORDER_INSERT,
+                    params![ordering.comic_id, ordering.rank, ordering.regex],
+                )
+                .map(|_| ())
+            })
+            .await
+    }
+
+    pub async fn delete_chapter_ordering(&mut self, id: u32) -> Result<()> {
+        let order = self.chapter_ordering(id).await?;
 
         self.conn
-            .execute(CHAPTER_ORDER_DECREMENT, params![order.comic_id, order.rank])
-            .map(|_| ())
+            .call(move |c| {
+                c.execute(CHAPTER_ORDER_DELETE, params![id])?;
+
+                c.execute(CHAPTER_ORDER_DECREMENT, params![order.comic_id, order.rank])
+                    .map(|_| ())
+            })
+            .await
     }
 }
-fn comic_from_row(r: &rusqlite::Row) -> Result<Comic> {
+fn comic_from_row(r: &rusqlite::Row) -> rusqlite::Result<Comic> {
     Ok(Comic {
         id: r.get(0)?,
         dir_path: r.get::<_, String>(1)?.into(),
@@ -197,7 +271,7 @@ fn comic_from_row(r: &rusqlite::Row) -> Result<Comic> {
     })
 }
 
-fn chapter_from_row(r: &rusqlite::Row) -> Result<Chapter> {
+fn chapter_from_row(r: &rusqlite::Row) -> rusqlite::Result<Chapter> {
     Ok(Chapter {
         id: r.get(0)?,
         path: r.get::<_, String>(1)?.into(),
@@ -209,7 +283,7 @@ fn chapter_from_row(r: &rusqlite::Row) -> Result<Chapter> {
     })
 }
 
-fn chapter_order_from_row(r: &rusqlite::Row) -> Result<ChapterOrdering> {
+fn chapter_order_from_row(r: &rusqlite::Row) -> rusqlite::Result<ChapterOrdering> {
     Ok(ChapterOrdering {
         id: r.get(0)?,
         comic_id: r.get(1)?,
@@ -228,12 +302,12 @@ mod tests {
         MIGRATIONS.validate().unwrap();
     }
 
-    #[test]
-    fn add_comics() -> Result<()> {
-        let conn = Connection::open_in_memory()?;
-        let mut db = Database::_from_conn(conn)?;
+    #[tokio::test]
+    async fn add_comics() -> Result<()> {
+        let conn = Connection::open_in_memory().await?;
+        let mut db = Database::_from_conn(conn).await?;
 
-        let comics = [
+        let comics = vec![
             Comic {
                 id: 0,
                 dir_path: "/one_piece".into(),
@@ -294,10 +368,10 @@ mod tests {
             },
         ];
 
-        db.insert_comics(&comics)?;
+        db.insert_comics(comics).await?;
 
-        assert_eq!(db.comics()?.len(), 2);
-        assert_eq!(db.comic_with_chapters(2)?.chapters.len(), 2);
+        assert_eq!(db.comics().await?.len(), 2);
+        assert_eq!(db.comic_with_chapters(2).await?.chapters.len(), 2);
 
         Ok(())
     }
