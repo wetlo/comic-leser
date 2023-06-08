@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
     fs::File,
-    fs::{DirEntry, FileType},
     path::{Path, PathBuf},
     sync::LazyLock,
 };
 
 use anyhow::Result;
 use itertools::Itertools;
+use tokio::fs::DirEntry;
+use tokio_stream::{Stream, StreamExt};
 
 use crate::db::Database;
 use crate::entities::{Chapter, Comic};
@@ -104,13 +105,16 @@ impl Library {
     async fn scan(&mut self) -> Result<Vec<Comic>> {
         let db_comics = self.comic_path_hashmap().await?;
 
-        let comics = read_entries_with_file_type(&self.path, is_not_hidden, |t| t.is_dir())?
-            // only use entries with valid paths
-            .filter_map(|d| Some(d.ok()?.path()))
-            // create comic from entry
-            .map(|d| self.create_scanned_comic(d, &db_comics));
-
-        futures::future::try_join_all(comics).await
+        let comics =
+            read_entries_with_file_type(&self.path, |f: &Path| is_not_hidden(f) && f.is_dir())
+                .await?
+                // only use entries with valid paths
+                .filter_map(|d| Some(d.ok()?.path()))
+                // create comic from entry
+                .then(|d| self.create_scanned_comic(d, &db_comics))
+                .collect::<Result<Vec<_>>>()
+                .await;
+        comics
 
         //Ok(comics)
     }
@@ -142,28 +146,32 @@ impl Library {
         let mut chap_num = 1;
         let chapter_orderings = self.get_chapter_orderings(comic_id).await?;
 
-        let chaps = read_entries_with_file_type(
-            path,
-            |f| f.extension().is_some_and(|e| e == "cbz"),
-            |t| t.is_file(),
-        )?
+        let mut chap_paths = read_entries_with_file_type(path, |f| {
+            f.extension().is_some_and(|e| e == "cbz") && f.is_file()
+        })
+        .await?
         .map(|r| r.unwrap().path())
         // sort them by their chapter number for numbering them
-        .sorted_by_key(|p| self.chapter_number_from_path(p, &chapter_orderings))
-        .map(|p| {
-            let c = Chapter {
-                id: 0,
-                pages: 0,
-                name: p.file_stem().unwrap().to_string_lossy().into_owned(),
-                path: p,
-                chapter_number: chap_num,
-                read: 0,
-                comic_id,
-            };
-            chap_num += 1;
-            c
-        })
-        .collect_vec();
+        .collect::<Vec<_>>()
+        .await;
+
+        chap_paths.sort_by_key(|p| self.chapter_number_from_path(p, &chapter_orderings));
+        let chaps = chap_paths
+            .into_iter()
+            .map(|p| {
+                let c = Chapter {
+                    id: 0,
+                    pages: 0,
+                    name: p.file_stem().unwrap().to_string_lossy().into_owned(),
+                    path: p,
+                    chapter_number: chap_num,
+                    read: 0,
+                    comic_id,
+                };
+                chap_num += 1;
+                c
+            })
+            .collect_vec();
 
         Ok(chaps)
     }
@@ -218,23 +226,24 @@ impl Library {
     }
 }
 
-fn read_entries_with_file_type<P, FT, FE>(
+async fn read_entries_with_file_type<P, FE>(
     path: P,
     pred_entry: FE,
-    pred_type: FT,
-) -> Result<impl Iterator<Item = std::io::Result<DirEntry>>>
+) -> Result<impl Stream<Item = std::io::Result<DirEntry>>>
 where
     P: AsRef<Path>,
-    FT: Fn(&FileType) -> bool,
+    //FT: Fn(&FileType) -> bool,
     FE: Fn(&Path) -> bool,
 {
-    let entries = std::fs::read_dir(path)?;
+    let entries = tokio::fs::read_dir(path).await?;
+    let entries = tokio_stream::wrappers::ReadDirStream::new(entries);
+    //let entries = std::fs::read_dir(path)?;
 
     let result = entries.filter(move |f| {
         f.as_ref()
             .ok()
-            .and_then(|f| Some((f.path(), f.file_type().ok()?))) // handle errors before preds
-            .is_some_and(|(f, t)| pred_type(&t) && pred_entry(&f))
+            //.and_then(|f| Some((f.path(), f.file_type().ok()?))) // handle errors before preds
+            .is_some_and(|f| pred_entry(&f.path()))
     });
 
     Ok(result)

@@ -88,7 +88,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "directories",
- "futures",
  "itertools",
  "percent-encoding",
  "regex",
@@ -100,6 +99,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "tokio-rusqlite",
+ "tokio-stream",
  "ts-rs",
  "url",
  "zip",
@@ -3352,6 +3352,17 @@ checksum = "7aa66395f5ff117faee90c9458232c936405f9227ad902038000b74b3bc1feac"
 dependencies = [
  "crossbeam-channel",
  "rusqlite",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
  "tokio",
 ]
 
