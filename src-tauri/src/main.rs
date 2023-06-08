@@ -17,6 +17,7 @@ use std::{
 };
 
 use api::LibState;
+use settings::Settings;
 use tauri::{
     http::{self, ResponseBuilder},
     AppHandle, Runtime,
@@ -27,6 +28,7 @@ mod api;
 mod db;
 mod entities;
 mod library;
+mod settings;
 
 fn get_comic_page<R: Runtime>(
     _app: &AppHandle<R>,
@@ -64,7 +66,8 @@ fn get_comic_page<R: Runtime>(
 }
 
 fn main() -> anyhow::Result<()> {
-    let library = library::Library::new("/media/manga/")?;
+    let settings = Settings::load_from_config()?;
+    let library = library::Library::new(settings.comic_path)?;
     let state = Arc::new(Mutex::new(library));
 
     tauri::Builder::default()
