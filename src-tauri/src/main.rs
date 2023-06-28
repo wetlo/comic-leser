@@ -10,11 +10,11 @@
 
 use std::{error::Error, fs::File, io::BufReader, io::Read, path::Path};
 
-use api::LibState;
+use api::{LibState, SettingsState};
 use settings::Settings;
 use tauri::{
     http::{self, ResponseBuilder},
-    AppHandle, Runtime,
+    AppHandle, Manager, Runtime,
 };
 use url::Url;
 
@@ -25,12 +25,16 @@ mod library;
 mod settings;
 
 fn get_comic_page<R: Runtime>(
-    _app: &AppHandle<R>,
+    app: &AppHandle<R>,
     req: &http::Request,
 ) -> Result<http::Response, Box<dyn Error>> {
+    let state = app.state::<SettingsState>();
+    let path = &state.access()?.comic_path;
+
     let uri = Url::parse(req.uri())?;
 
-    let path = percent_encoding::percent_decode_str(uri.path()).decode_utf8()?;
+    let chapter_path = &percent_encoding::percent_decode_str(uri.path()).decode_utf8()?[1..];
+    let path = path.join(&*chapter_path);
 
     let page = uri
         .query_pairs()
@@ -62,10 +66,11 @@ fn get_comic_page<R: Runtime>(
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let settings = Settings::load_from_config()?;
-    let library = library::Library::new(settings.comic_path).await?;
+    let library = library::Library::new(&settings.comic_path).await?;
 
     tauri::Builder::default()
         .manage(LibState::from_lib(library))
+        .manage(SettingsState::from_settings(settings))
         .register_uri_scheme_protocol("comic", get_comic_page)
         .invoke_handler(api::get_invoke_handler())
         .run(tauri::generate_context!())

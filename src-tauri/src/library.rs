@@ -62,7 +62,7 @@ impl Library {
         // only get the page count when the chapter is new
         let chaps_from_new_comics = new_comics.iter_mut().flat_map(|c| c.chapters.iter_mut());
         for c in new_chapters.iter_mut().chain(chaps_from_new_comics) {
-            c.pages = zip::ZipArchive::new(File::open(&c.path).unwrap())
+            c.pages = zip::ZipArchive::new(File::open(self.abs_path(&c.path)).unwrap())
                 .unwrap()
                 .len() as u32;
         }
@@ -137,7 +137,7 @@ impl Library {
             chapter_read: None,
             is_manga: self.is_manga_db,
             cover_path: None,
-            dir_path: d,
+            dir_path: self.relative_path(d),
         })
     }
 
@@ -163,7 +163,7 @@ impl Library {
                     id: 0,
                     pages: 0,
                     name: p.file_stem().unwrap().to_string_lossy().into_owned(),
-                    path: p,
+                    path: self.relative_path(p),
                     chapter_number: chap_num,
                     read: 0,
                     comic_id,
@@ -223,6 +223,17 @@ impl Library {
             .into_iter()
             .map(|o| regex::Regex::new(&o.regex))
             .collect::<Result<_, _>>()?)
+    }
+
+    fn relative_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        path.as_ref()
+            .strip_prefix(&self.path)
+            .expect("should be prefix")
+            .to_owned()
+    }
+
+    fn abs_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.path.join(path)
     }
 }
 

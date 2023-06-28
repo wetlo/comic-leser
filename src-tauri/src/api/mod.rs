@@ -1,12 +1,25 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex, MutexGuard as StdMutexGuard};
 
 use tokio::sync::{Mutex, MutexGuard};
 
-use crate::library::Library;
+use crate::{library::Library, settings::Settings};
 
 mod chapter;
 mod comics;
 mod orderings;
+
+pub struct SettingsState(Arc<StdMutex<Settings>>);
+
+impl SettingsState {
+    pub fn from_settings(settings: Settings) -> Self {
+        SettingsState(Arc::new(StdMutex::new(settings)))
+    }
+
+    pub fn access(&'_ self) -> Result<StdMutexGuard<'_, Settings>, String> {
+        self.0.lock().map_err(|e| e.to_string())
+    }
+}
+
 pub struct LibState(Arc<Mutex<Library>>);
 
 impl LibState {
