@@ -105,18 +105,14 @@ impl Library {
     async fn scan(&mut self) -> Result<Vec<Comic>> {
         let db_comics = self.comic_path_hashmap().await?;
 
-        let comics =
-            read_entries_with_file_type(&self.path, |f: &Path| is_not_hidden(f) && f.is_dir())
-                .await?
-                // only use entries with valid paths
-                .filter_map(|d| Some(d.ok()?.path()))
-                // create comic from entry
-                .then(|d| self.create_scanned_comic(d, &db_comics))
-                .collect::<Result<Vec<_>>>()
-                .await;
-        comics
-
-        //Ok(comics)
+        read_entries_with_file_type(&self.path, |f: &Path| is_not_hidden(f) && f.is_dir())
+            .await?
+            // only use entries with valid paths
+            .filter_map(|d| Some(d.ok()?.path()))
+            // create comic from entry
+            .then(|d| self.create_scanned_comic(d, &db_comics))
+            .collect::<Result<Vec<_>>>()
+            .await
     }
 
     async fn create_scanned_comic(

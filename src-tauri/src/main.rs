@@ -34,7 +34,7 @@ fn get_comic_page<R: Runtime>(
     let uri = Url::parse(req.uri())?;
 
     let chapter_path = &percent_encoding::percent_decode_str(uri.path()).decode_utf8()?[1..];
-    let path = path.join(&*chapter_path);
+    let path = path.join(chapter_path);
 
     let page = uri
         .query_pairs()
@@ -43,7 +43,7 @@ fn get_comic_page<R: Runtime>(
         .ok_or("Missing query param: page")?
         .parse::<usize>()?;
 
-    let file = File::open(&*path)?;
+    let file = File::open(path)?;
     let r = BufReader::new(file);
     let mut zip = zip::ZipArchive::new(r)?;
 
