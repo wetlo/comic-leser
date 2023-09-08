@@ -120,7 +120,8 @@ impl Library {
         d: PathBuf,
         db_comics: &HashMap<PathBuf, Comic>,
     ) -> Result<Comic> {
-        let id = db_comics.get(&d).map(|c| c.id).unwrap_or_default();
+        let p = self.relative_path(&d);
+        let id = db_comics.get(&p).map(|c| c.id).unwrap_or_default();
         Ok(Comic {
             id,
             name: d
@@ -133,7 +134,7 @@ impl Library {
             chapter_read: None,
             is_manga: self.is_manga_db,
             cover_path: None,
-            dir_path: self.relative_path(d),
+            dir_path: p,
         })
     }
 

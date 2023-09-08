@@ -4,7 +4,10 @@
     import type { Comic } from "../entities/Comic";
     import { CheckIcon, PlayIcon, SettingsIcon } from "svelte-feather-icons";
     import { WebviewWindow } from "@tauri-apps/api/window";
-    import { getComicWithChapters, updateChapterReadStatus } from "../api/api";
+    import {
+        getComicWithChapters,
+        updateChapterReadStatus,
+    } from "../api/comic";
     import ChapterTableRow from "../components/ChapterTableRow.svelte";
     import IconButton from "../components/IconButton.svelte";
 

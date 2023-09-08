@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Loading } from "attractions";
     import type { Chapter } from "../entities/Chapter";
-    import { getChapterByNumber, updateChapterReadStatus } from "../api/api";
+    import { getChapterByNumber, updateChapterReadStatus } from "../api/comic";
 
     //import { querystring } from "svelte-spa-router";
     interface Params {

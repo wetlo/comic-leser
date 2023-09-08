@@ -3,7 +3,7 @@
     import type { ChapterOrdering } from "../entities/ChapterOrdering";
     import IconButton from "./IconButton.svelte";
     import InplaceTextEdit from "./InplaceTextEdit.svelte";
-    import { updateChapterOrdering } from "../api/api";
+    import { updateChapterOrdering } from "../api/comic";
 
     export let ordering: ChapterOrdering;
     export let handleDelete: () => void;

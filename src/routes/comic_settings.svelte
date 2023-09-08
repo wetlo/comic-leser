@@ -7,7 +7,7 @@
         getComic,
         insertChapterOrdering,
         updateChapterOrdering,
-    } from "../api/api";
+    } from "../api/comic";
     import type { ChapterOrdering } from "../entities/ChapterOrdering";
     import type { Comic } from "../entities/Comic";
     import ChapterOrderingRow from "../components/ChapterOrderingRow.svelte";

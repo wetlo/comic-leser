@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { updateChapterReadStatus } from "../api/api";
+    import { updateChapterReadStatus } from "../api/comic";
     import type { Chapter } from "../entities/Chapter";
     import InplaceNumberEdit from "./InplaceNumberEdit.svelte";
 

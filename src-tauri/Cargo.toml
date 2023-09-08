@@ -1,11 +1,11 @@
 [package]
-name = "app"
+name = "comic-leser"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
 repository = ""
-default-run = "app"
+default-run = "comic-leser"
 edition = "2021"
 rust-version = "1.57"
 

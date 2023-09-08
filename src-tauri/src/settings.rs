@@ -3,10 +3,18 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Debug, Serialize, Deserialize, TS, Default)]
+#[derive(Debug, Serialize, Deserialize, TS, Default, Clone)]
 #[ts(export, export_to = "../src/entities/")]
 pub struct Settings {
-    pub comic_path: PathBuf,
+    pub libraries: Vec<LibraryConfig>,
+    pub selected_library: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS, Default, Clone)]
+#[ts(export, export_to = "../src/entities/")]
+pub struct LibraryConfig {
+    pub name: String,
+    pub path: PathBuf,
 }
 
 impl Settings {
@@ -18,5 +26,9 @@ impl Settings {
         let config = std::fs::read_to_string(config_path)?;
 
         Ok(serde_json::from_str(&config)?)
+    }
+
+    pub fn library(&'_ self) -> &LibraryConfig {
+        &self.libraries[self.selected_library]
     }
 }

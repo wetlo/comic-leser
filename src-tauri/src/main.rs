@@ -29,7 +29,8 @@ fn get_comic_page<R: Runtime>(
     req: &http::Request,
 ) -> Result<http::Response, Box<dyn Error>> {
     let state = app.state::<SettingsState>();
-    let path = &state.access()?.comic_path;
+    let settings = state.access()?;
+    let path = settings.library().path.clone();
 
     let uri = Url::parse(req.uri())?;
 
@@ -66,7 +67,7 @@ fn get_comic_page<R: Runtime>(
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let settings = Settings::load_from_config()?;
-    let library = library::Library::new(&settings.comic_path).await?;
+    let library = library::Library::new(&settings.library().path).await?;
 
     tauri::Builder::default()
         .manage(LibState::from_lib(library))

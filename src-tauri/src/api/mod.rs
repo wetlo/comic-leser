@@ -7,6 +7,7 @@ use crate::{library::Library, settings::Settings};
 mod chapter;
 mod comics;
 mod orderings;
+mod settings;
 
 pub struct SettingsState(Arc<StdMutex<Settings>>);
 
@@ -43,5 +44,9 @@ pub fn get_invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync 
         orderings::insert_ordering,
         orderings::delete_ordering,
         orderings::update_ordering,
+        settings::get_settings,
+        settings::add_library,
+        settings::select_library,
+        settings::delete_library,
     ]
 }
