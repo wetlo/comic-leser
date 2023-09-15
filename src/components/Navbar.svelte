@@ -19,9 +19,11 @@
                 Library
             </a>
         </h2>
-        <h2 data-tooltip="Go to your settings">
-            <SettingsIcon />
-            Settings
+        <h2>
+            <a href="#/settings" data-tooltip="Go to your settings">
+                <SettingsIcon />
+                Settings
+            </a>
         </h2>
         <h2>
             <a href="#/test" data-tooltip="Go to the Test page">
@@ -44,6 +46,8 @@
         left: 0;
         width: 20vw;
         height: 100vh;
+
+        box-shadow: inset -5px 0rem 10px 2px rgba(0,0,0,0.1);
     }
 
     h1 {
@@ -61,10 +65,13 @@
 
     a {
         color: inherit;
+        display: block;
+        width: auto;
     }
 
     h2 {
         text-align: left;
+        width:auto;
         margin: 0;
         padding: 0.5rem 0;
         padding-left: 1rem;
