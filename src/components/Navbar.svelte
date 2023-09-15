@@ -62,4 +62,15 @@
     a {
         color: inherit;
     }
+
+    h2 {
+        text-align: left;
+        margin: 0;
+        padding: 0.5rem 0;
+        padding-left: 1rem;
+    }
+
+    h2:hover {
+        background-color: #222222;
+    }
 </style>
