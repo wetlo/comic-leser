@@ -3,6 +3,7 @@
 #![feature(lazy_cell)]
 #![feature(iterator_try_collect)]
 #![feature(async_closure)]
+#![feature(result_flattening)]
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
@@ -16,6 +17,7 @@ use tauri::{
     http::{self, ResponseBuilder},
     AppHandle, Manager, Runtime,
 };
+use tokio::runtime::Handle;
 use url::Url;
 
 mod api;
@@ -29,8 +31,15 @@ fn get_comic_page<R: Runtime>(
     req: &http::Request,
 ) -> Result<http::Response, Box<dyn Error>> {
     let state = app.state::<SettingsState>();
-    let settings = state.access()?;
-    let path = settings.library().path.clone();
+    // custom schemes can't be async yet, so this workaround needs to be used
+    let path = {
+        let handle = Handle::current();
+        let _ = handle.enter();
+        futures::executor::block_on(state.access())?
+            .library()
+            .path
+            .clone()
+    };
 
     let uri = Url::parse(req.uri())?;
 

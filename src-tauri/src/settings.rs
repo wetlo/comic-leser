@@ -8,11 +8,14 @@ use ts_rs::TS;
 pub struct Settings {
     pub libraries: Vec<LibraryConfig>,
     pub selected_library: usize,
+    #[ts(skip)]
+    pub next_library_id: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS, Default, Clone)]
 #[ts(export, export_to = "../src/entities/")]
 pub struct LibraryConfig {
+    pub id: usize,
     pub name: String,
     pub path: PathBuf,
 }

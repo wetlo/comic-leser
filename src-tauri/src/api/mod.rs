@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex as StdMutex, MutexGuard as StdMutexGuard};
+use std::sync::Arc;
 
 use tokio::sync::{Mutex, MutexGuard};
 
@@ -9,15 +9,16 @@ mod comics;
 mod orderings;
 mod settings;
 
-pub struct SettingsState(Arc<StdMutex<Settings>>);
+#[derive(Clone)]
+pub struct SettingsState(Arc<Mutex<Settings>>);
 
 impl SettingsState {
     pub fn from_settings(settings: Settings) -> Self {
-        SettingsState(Arc::new(StdMutex::new(settings)))
+        SettingsState(Arc::new(Mutex::new(settings)))
     }
 
-    pub fn access(&'_ self) -> Result<StdMutexGuard<'_, Settings>, String> {
-        self.0.lock().map_err(|e| e.to_string())
+    pub async fn access(&'_ self) -> Result<MutexGuard<'_, Settings>, String> {
+        Ok(self.0.lock().await)
     }
 }
 
@@ -48,5 +49,6 @@ pub fn get_invoke_handler() -> impl Fn(tauri::Invoke<tauri::Wry>) + Send + Sync 
         settings::add_library,
         settings::select_library,
         settings::delete_library,
+        settings::update_library,
     ]
 }
