@@ -10,10 +10,14 @@ export async function addLibrary(lib: LibraryConfig): Promise<void> {
     return invoke("add_library", { lib })
 }
 
-export async function selectLibrary(path: string): Promise<void> {
-    return invoke("select_library", { path })
+export async function selectLibrary(id: number): Promise<void> {
+    return invoke("select_library", { id })
 }
 
-export async function deleteLibrary(path: string): Promise<void> {
-    return invoke("delete_library", { path })
+export async function deleteLibrary(id: number): Promise<void> {
+    return invoke("delete_library", { id })
+}
+
+export async function updateLibrary(lib: LibraryConfig): Promise<void> {
+    return invoke("update_library", { lib })
 }
