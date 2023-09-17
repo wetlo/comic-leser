@@ -32,7 +32,9 @@
             {#each $settings.libraries as l}
                 <LibraryCard bind:library={l} />
             {/each}
-            <IconButton on:click={addDummyLibrary}><PlusIcon /></IconButton>
+            <div class="flex flex-end add-library">
+                <IconButton on:click={addDummyLibrary}><PlusIcon /></IconButton>
+            </div>
         </div>
     {/if}
 </Navbar>
@@ -40,5 +42,12 @@
 <style>
     .library-editor {
         margin: 0 auto;
+        width: 50%;
+        min-width: 30rem; /*TODO change that maybe*/
+    }
+
+    .add-library {
+        margin-top: 0.5rem;
+        margin-right: 0.5rem;
     }
 </style>

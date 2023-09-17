@@ -1,8 +1,10 @@
 <script lang="ts">
+    import { compute_rest_props } from "svelte/internal";
+
     export let tooltip: string | undefined = undefined;
 </script>
 
-<button on:click data-tooltip={tooltip}>
+<button on:click data-tooltip={tooltip} class={$$props.class}>
     <slot />
 </button>
 
