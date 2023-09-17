@@ -1,8 +1,9 @@
 <script lang="ts">
     import Navbar from "../components/Navbar.svelte";
     import { getAllComics, getChapterByNumber } from "../api/comic";
+    import { comics } from "../store";
 
-    async function get_comics() {
+    /*async function get_comics() {
         const cs = await getAllComics();
 
         for (let i = 0; i < cs.length; i++) {
@@ -12,30 +13,28 @@
 
         console.log(cs);
         return cs;
-    }
+    }*/
 </script>
 
 <Navbar>
-    {#await get_comics()}
-        loading comics
-    {:then cs}
-        <div class="flex v-center comics">
-            {#each cs as c}
-                <a href="#/detail/{c.id}" class="card">
-                    <img
-                        alt="{c.name} cover"
-                        src="comic://localhost/{encodeURIComponent(
-                            c.chapters[0].path
-                        )}?page=1"
-                    />
-                    <div class="info flex space-between v-center">
-                        <p>{c.name}</p>
-                        <p>{c.chapter_read}/{c.chapter_count}</p>
-                    </div>
-                </a>
-            {/each}
-        </div>
-    {/await}
+    <div class="flex v-center comics">
+        {#each $comics as c}
+            <a href="#/detail/{c.id}" class="card">
+                <img
+                    alt="{c.name} cover"
+                    src="comic://localhost/{encodeURIComponent(
+                        c.chapters[0].path
+                    )}?page=1"
+                />
+                <div class="info flex space-between v-center">
+                    <p>{c.name}</p>
+                    <p>{c.chapter_read}/{c.chapter_count}</p>
+                </div>
+            </a>
+        {:else}
+            no comics
+        {/each}
+    </div>
 </Navbar>
 
 <style>

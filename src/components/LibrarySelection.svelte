@@ -3,99 +3,105 @@
     import { getSettings, selectLibrary } from "../api/settings";
     import type { LibraryConfig } from "../entities/LibraryConfig";
     import { push } from "svelte-spa-router";
+    import { settings } from "../store";
 
-    const settingsPromise = getSettings();
     let showmenu: boolean = false;
 
-    $: className = showmenu ? 'show' : ''
+    $: className = showmenu ? "show" : "";
 
     function switchLibrary(library: LibraryConfig) {
-        selectLibrary(library.path);
+        selectLibrary(library.id);
         showmenu = false;
-        push('/')
+        push("/");
     }
-
 </script>
 
 <div>
     <Divider />
-    {#await settingsPromise}
-        what?
-    {:then settings}
+    {#if $settings == null}
+        Loading settings
+    {:else}
         <div class="pop-up-container">
-            <button class="flex row space-between" on:click={() => showmenu = !showmenu}>
-                <h3>{settings.libraries[settings.selected_library].name}</h3>
+            <button
+                class="flex row space-between"
+                on:click={() => (showmenu = !showmenu)}
+            >
+                <h3>{$settings.libraries[$settings.selected_library].name}</h3>
             </button>
-            
+
             <div class="selector {className}">
                 <h4>Switch library</h4>
                 <Divider />
 
-                {#each settings.libraries as l}
-                    <button class="library-card" on:click={() => switchLibrary(l)}>{l.name}</button>
+                {#each $settings.libraries as l}
+                    <button
+                        class="library-card"
+                        on:click={() => switchLibrary(l)}>{l.name}</button
+                    >
                 {/each}
             </div>
-            <button class="outside-click {className}"
-                on:click={() => showmenu = false}/>
+            <button
+                class="outside-click {className}"
+                on:click={() => (showmenu = false)}
+            />
         </div>
-    {/await}
+    {/if}
 </div>
 
-
 <style>
+    * {
+        text-align: left;
+    }
 
-* {
-    text-align: left;
-}
+    button,
+    button:focus {
+        background: none;
+        color: inherit;
+        border: none;
+        /* padding: inherit; */
+        font: inherit;
+        cursor: pointer;
+        outline: inherit;
+    }
 
-button, button:focus {
-	background: none;
-	color: inherit;
-	border: none;
-	/* padding: inherit; */
-	font: inherit;
-	cursor: pointer;
-	outline: inherit;
-}
+    .pop-up-container {
+        position: relative;
+    }
 
-.pop-up-container {
-    position: relative;
-}
+    .selector {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        width: 20rem;
 
-.selector {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    width: 20rem;
+        margin: 1.5rem;
+        padding: 1rem;
+        padding-top: 0.3rem;
 
-    margin: 1.5rem;
-    padding: 1rem;
-    padding-top: 0.3rem;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.9);
+        z-index: 10;
+    }
 
-    border-radius: 5px;
-    box-shadow: 0 2px 10px 0 rgba(0.0, 0.0, 0.0, 0.9);
-    z-index: 10;
-}
+    .show {
+        display: block !important;
+    }
 
-.show {
-    display: block !important;
-}
+    .outside-click {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+    }
 
-.outside-click {
-    display: none;
-    position: fixed;
-    top: 0;
-    left:0;
-    bottom: 0;
-    right: 0;
-}
+    .library-card {
+        padding: 0.5rem;
+        width: 100%;
+    }
 
-.library-card {
-    padding: 0.5rem;
-    width: 100%;
-}
-
-.library-card:hover {
-    background-color: #222222;
-}
+    .library-card:hover {
+        background-color: #222222;
+    }
 </style>
