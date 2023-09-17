@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::entities::ChapterOrdering;
+use crate::{entities::ChapterOrdering, util::str_error::StringResult};
 
 use super::LibState;
 
@@ -15,7 +15,7 @@ pub async fn chapter_orderings(
         .database
         .chapter_orderings(comic_id)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }
 
 #[tauri::command]
@@ -29,7 +29,7 @@ pub async fn insert_ordering(
         .database
         .insert_chapter_ordering(ordering)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }
 
 #[tauri::command]
@@ -40,7 +40,7 @@ pub async fn delete_ordering(id: u32, library: State<'_, LibState>) -> Result<()
         .database
         .delete_chapter_ordering(id)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }
 
 #[tauri::command]
@@ -54,5 +54,5 @@ pub async fn update_ordering(
         .database
         .update_chapter_ordering(ordering)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }

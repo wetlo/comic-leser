@@ -1,8 +1,11 @@
 use std::path::Path;
 
+use tauri::{App, AppHandle, Manager};
+
 use crate::{
     library::Library,
     settings::{LibraryConfig, Settings},
+    util::str_error::StringResult,
 };
 
 use super::SettingsState;
@@ -25,10 +28,11 @@ pub async fn add_library(
 }
 
 #[tauri::command]
-pub async fn select_library<'a>(
+pub async fn select_library<'a, R: tauri::Runtime>(
     id: usize,
     settings: tauri::State<'a, SettingsState>,
     library: tauri::State<'a, super::LibState>,
+    app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
     let mut settings = settings.access().await?;
     let idx = get_idx(&settings.libraries, id)?;
@@ -41,6 +45,9 @@ pub async fn select_library<'a>(
         *lib = std::thread::spawn(move || create_new_library(path))
             .join()
             .expect("thread panicked again :(")?;
+
+        // TODO: maybe give the comics with the event for less communication errors
+        app.emit_all("comics_reloaded", ()).str_err()?;
     }
     Ok(())
 }
@@ -49,7 +56,7 @@ pub async fn select_library<'a>(
 /// some kind of higher order lifetime error
 #[tokio::main]
 async fn create_new_library<P: AsRef<Path>>(p: P) -> Result<Library, String> {
-    Library::new(p).await.map_err(|e| e.to_string())
+    Library::new(p).await.str_err()
 }
 
 #[tauri::command]
@@ -72,6 +79,8 @@ pub async fn update_library(
 
     let idx = get_idx(&settings.libraries, lib.id)?;
     settings.libraries[idx] = lib;
+
+    //TODO: save settings to disk
     Ok(())
 }
 

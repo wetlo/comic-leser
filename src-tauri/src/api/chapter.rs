@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::entities::Chapter;
+use crate::{entities::Chapter, util::str_error::StringResult};
 
 use super::LibState;
 
@@ -16,7 +16,7 @@ pub async fn chapter(
         .database
         .chapter_by_number(comic_id, chapter_number)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }
 
 #[tauri::command]
@@ -31,5 +31,5 @@ pub async fn chapter_page_update(
         .database
         .update_chapter_page(id, page)
         .await
-        .map_err(|e| e.to_string())
+        .str_err()
 }

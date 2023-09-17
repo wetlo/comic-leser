@@ -25,6 +25,7 @@ mod db;
 mod entities;
 mod library;
 mod settings;
+mod util;
 
 fn get_comic_page<R: Runtime>(
     app: &AppHandle<R>,
