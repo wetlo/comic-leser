@@ -67,6 +67,8 @@ pub async fn delete_library(
     let mut settings = settings.access().await?;
     let idx = get_idx(&settings.libraries, id)?;
     settings.libraries.swap_remove(idx);
+    // TODO: handle when the selected one is deleted
+    // TODO: handle when there are no more libraries left
     Ok(())
 }
 
