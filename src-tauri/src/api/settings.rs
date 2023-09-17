@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use tauri::{App, AppHandle, Manager};
+use tauri::Manager;
 
 use crate::{
     library::Library,

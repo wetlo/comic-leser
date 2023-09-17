@@ -3,14 +3,15 @@
     import { getSettings, selectLibrary } from "../api/settings";
     import type { LibraryConfig } from "../entities/LibraryConfig";
     import { push } from "svelte-spa-router";
-    import { settings } from "../store";
+    import { reloadSettings, settings } from "../store";
 
     let showmenu: boolean = false;
 
     $: className = showmenu ? "show" : "";
 
-    function switchLibrary(library: LibraryConfig) {
+    function switchLibrary(library: LibraryConfig): void {
         selectLibrary(library.id);
+        reloadSettings(); // TODO: maybe add those in the api
         showmenu = false;
         push("/");
     }

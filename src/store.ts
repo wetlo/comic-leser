@@ -1,3 +1,4 @@
+import { listen } from '@tauri-apps/api/event'
 import { writable } from "svelte/store";
 import type { Settings } from "./entities/Settings";
 import { getSettings } from "./api/settings";
@@ -16,6 +17,7 @@ export function reloadSettings(): void {
 export async function reloadComics(): Promise<void> {
     const cs = await getAllComics();
 
+    // get first chapter for cover page
     for (let i = 0; i < cs.length; i++) {
         const c = cs[i];
         c.chapters = [await getChapterByNumber(c.id, 1)];
@@ -28,4 +30,5 @@ export async function reloadComics(): Promise<void> {
 reloadSettings();
 reloadComics();
 
-// TODO check for comic update events
+// reloads the comic store when the event is received
+listen("comics_reloaded", _ => reloadComics());
