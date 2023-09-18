@@ -35,11 +35,10 @@ pub async fn select_library<'a, R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
     let mut settings = settings.access().await?;
-    let idx = get_idx(&settings.libraries, id)?;
-    if settings.selected_library != idx {
-        settings.selected_library = idx;
+    if settings.selected_library.is_some_and(|s| s != id) {
+        settings.selected_library = Some(id);
 
-        let path = settings.library().path.clone();
+        let path = settings.library().ok_or("Invalid Library id")?.path.clone();
 
         let mut lib = library.access().await?;
         *lib = std::thread::spawn(move || create_new_library(path))
@@ -60,15 +59,31 @@ async fn create_new_library<P: AsRef<Path>>(p: P) -> Result<Library, String> {
 }
 
 #[tauri::command]
-pub async fn delete_library(
+pub async fn delete_library<R: tauri::Runtime>(
     id: usize,
     settings: tauri::State<'_, SettingsState>,
+    library: tauri::State<'_, super::LibState>,
+    app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
-    let mut settings = settings.access().await?;
-    let idx = get_idx(&settings.libraries, id)?;
-    settings.libraries.swap_remove(idx);
+    let mut sett = settings.access().await?;
+    let idx = get_idx(&sett.libraries, id)?;
+    sett.libraries.remove(idx);
+
+    match (
+        sett.selected_library,
+        sett.libraries.iter().find(|l| l.id != id),
+    ) {
+        (Some(sel), Some(l)) if sel == id => {
+            let id = l.id;
+            drop(sett); // drop the reference to avoid deadlocks
+            select_library(id, settings, library, app).await?
+        }
+        (Some(_), None) => todo!("handle empty list"),
+        _ => (),
+    }
     // TODO: handle when the selected one is deleted
     // TODO: handle when there are no more libraries left
+
     Ok(())
 }
 

@@ -7,7 +7,7 @@ use ts_rs::TS;
 #[ts(export, export_to = "../src/entities/")]
 pub struct Settings {
     pub libraries: Vec<LibraryConfig>,
-    pub selected_library: usize,
+    pub selected_library: Option<usize>,
     #[ts(skip)]
     pub next_library_id: usize,
 }
@@ -31,7 +31,8 @@ impl Settings {
         Ok(serde_json::from_str(&config)?)
     }
 
-    pub fn library(&'_ self) -> &LibraryConfig {
-        &self.libraries[self.selected_library]
+    pub fn library(&'_ self) -> Option<&LibraryConfig> {
+        self.selected_library
+            .and_then(|sel| self.libraries.iter().find(|l| l.id == sel))
     }
 }

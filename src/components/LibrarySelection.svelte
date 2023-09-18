@@ -12,9 +12,14 @@
     function switchLibrary(library: LibraryConfig): void {
         selectLibrary(library.id);
         reloadSettings(); // TODO: maybe add those in the api
+        //console.log($settings);
         showmenu = false;
         push("/");
     }
+
+    $: selected_library = $settings?.libraries.find(
+        (l) => l.id == $settings.selected_library
+    );
 </script>
 
 <div>
@@ -27,7 +32,7 @@
                 class="flex row space-between"
                 on:click={() => (showmenu = !showmenu)}
             >
-                <h3>{$settings.libraries[$settings.selected_library]?.name}</h3>
+                <h3>{selected_library?.name}</h3>
             </button>
 
             <div class="selector {className}">
