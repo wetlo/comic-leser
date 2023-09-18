@@ -3,6 +3,7 @@
 #![feature(lazy_cell)]
 #![feature(iterator_try_collect)]
 #![feature(async_closure)]
+#![feature(let_chains)]
 #![feature(result_flattening)]
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),

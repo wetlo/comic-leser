@@ -16,14 +16,22 @@ pub async fn get_settings(settings: tauri::State<'_, SettingsState>) -> Result<S
 }
 
 #[tauri::command]
-pub async fn add_library(
+pub async fn add_library<R: tauri::Runtime>(
     mut lib: LibraryConfig,
     settings: tauri::State<'_, SettingsState>,
+    library: tauri::State<'_, super::LibState>,
+    app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
-    let mut settings = settings.access().await?;
-    lib.id = settings.next_library_id;
-    settings.next_library_id += 1;
-    settings.libraries.push(lib);
+    let mut sett = settings.access().await?;
+    let id = sett.next_library_id;
+    lib.id = id;
+    sett.next_library_id += 1;
+    sett.libraries.push(lib);
+
+    if sett.libraries.len() == 1 {
+        drop(sett); // drop reference
+        select_library(id, settings, library, app).await?;
+    }
     Ok(())
 }
 
@@ -38,16 +46,34 @@ pub async fn select_library<'a, R: tauri::Runtime>(
     if settings.selected_library.is_some_and(|s| s != id) {
         settings.selected_library = Some(id);
 
-        let path = settings.library().ok_or("Invalid Library id")?.path.clone();
-
-        let mut lib = library.access().await?;
-        *lib = std::thread::spawn(move || create_new_library(path))
-            .join()
-            .expect("thread panicked again :(")?;
-
-        // TODO: maybe give the comics with the event for less communication errors
-        app.emit_all("comics_reloaded", ()).str_err()?;
+        let lib = settings.library().ok_or("Invalid Library id")?.clone();
+        drop(settings);
+        load_library(&lib, library, app).await?;
     }
+    Ok(())
+}
+
+async fn load_library<R: tauri::Runtime>(
+    lib: &'_ LibraryConfig,
+    library: tauri::State<'_, super::LibState>,
+    app: tauri::AppHandle<R>,
+) -> Result<(), String> {
+    let path = lib.path.clone();
+
+    // only allow absolute paths here
+    if path.is_relative() {
+        return Ok(());
+    }
+
+    let mut lib = library.access_option().await;
+    let tmp = std::thread::spawn(move || create_new_library(path))
+        .join()
+        .expect("thread panicked again :(")?;
+    *lib = Some(tmp);
+
+    // TODO: maybe give the comics with the event for less communication errors
+    app.emit_all("comics_reloaded", ()).str_err()?;
+
     Ok(())
 }
 
@@ -85,22 +111,30 @@ pub async fn delete_library<R: tauri::Runtime>(
         }
         _ => (),
     }
-    // TODO: handle when the selected one is deleted
-    // TODO: handle when there are no more libraries left
 
     Ok(())
 }
 
 #[tauri::command]
-pub async fn update_library(
+pub async fn update_library<R: tauri::Runtime>(
     lib: LibraryConfig,
     settings: tauri::State<'_, SettingsState>,
+    library: tauri::State<'_, super::LibState>,
+    app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
-    let mut settings = settings.access().await?;
+    let mut sett = settings.access().await?;
 
-    let idx = get_idx(&settings.libraries, lib.id)?;
-    settings.libraries[idx] = lib;
+    let idx = get_idx(&sett.libraries, lib.id)?;
+    let id = lib.id;
+    let old_path = sett.libraries[idx].path.clone();
+    sett.libraries[idx] = lib;
 
+    if let Some(lib) = sett.library().cloned()
+     && lib.id == id
+     && lib.path != old_path {
+        drop(sett);
+        load_library(&lib, library, app).await?;
+    }
     //TODO: save settings to disk
     Ok(())
 }

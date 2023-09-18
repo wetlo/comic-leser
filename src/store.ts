@@ -15,7 +15,10 @@ export function reloadSettings(): void {
     getSettings().then(s => settings.set(s))
 }
 export async function reloadComics(): Promise<void> {
-    const cs = await getAllComics().catch(_ => []);
+    const cs = await getAllComics().catch(e => {
+        console.log(e);
+        return [];
+    });
 
     // get first chapter for cover page
     for (let i = 0; i < cs.length; i++) {

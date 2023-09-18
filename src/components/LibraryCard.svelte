@@ -9,7 +9,20 @@
 
     export let library: LibraryConfig;
 
-    $: updateLibrary(library);
+    let timer: NodeJS.Timeout;
+
+    /*$: {
+        console.log("hello");
+        clearTimeout(timer);
+        timer = setTimeout(() => updateLibrary(library), 500);
+    }*/
+
+    $: library && debounceUpdate();
+
+    function debounceUpdate() {
+        clearTimeout(timer);
+        timer = setTimeout(() => updateLibrary(library), 500);
+    }
 
     async function browse() {
         const selected = await open({
