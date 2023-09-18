@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
-use crate::{library::Library, settings::Settings};
+use crate::{library::Library, settings::Settings, util::str_error::StringResult};
 
 mod chapter;
 mod comics;
@@ -22,15 +22,26 @@ impl SettingsState {
     }
 }
 
-pub struct LibState(Arc<Mutex<Library>>);
+pub struct LibState(Arc<Mutex<Option<Library>>>);
 
 impl LibState {
     pub fn from_lib(lib: Library) -> Self {
-        LibState(Arc::new(Mutex::new(lib)))
+        LibState(Arc::new(Mutex::new(Some(lib))))
     }
 
-    pub async fn access(&'_ self) -> Result<MutexGuard<'_, Library>, String> {
-        Ok(self.0.lock().await)
+    pub async fn access(&'_ self) -> Result<MappedMutexGuard<'_, Library>, String> {
+        let guard = self.0.lock().await;
+
+        //guard.map(|l| MutexGuard::map(guard, |_| &mut l));
+        //MutexGuard::map(guard, |)
+
+        MutexGuard::try_map(guard, |l| l.as_mut())
+            .map_err(|_| "no library loaded")
+            .str_err()
+    }
+
+    pub async fn access_option(&'_ self) -> MutexGuard<'_, Option<Library>> {
+        self.0.lock().await
     }
 }
 

@@ -78,7 +78,11 @@ pub async fn delete_library<R: tauri::Runtime>(
             drop(sett); // drop the reference to avoid deadlocks
             select_library(id, settings, library, app).await?
         }
-        (Some(_), None) => todo!("handle empty list"),
+        (Some(_), None) => {
+            let mut lib = library.access_option().await;
+            *lib = None;
+            app.emit_all("comics_reloaded", ()).str_err()?;
+        }
         _ => (),
     }
     // TODO: handle when the selected one is deleted

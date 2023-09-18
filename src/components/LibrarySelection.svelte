@@ -32,7 +32,7 @@
                 class="flex row space-between"
                 on:click={() => (showmenu = !showmenu)}
             >
-                <h3>{selected_library?.name}</h3>
+                <h3>{selected_library?.name || "No Library available"}</h3>
             </button>
 
             <div class="selector {className}">

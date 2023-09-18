@@ -15,13 +15,15 @@ export function reloadSettings(): void {
     getSettings().then(s => settings.set(s))
 }
 export async function reloadComics(): Promise<void> {
-    const cs = await getAllComics();
+    const cs = await getAllComics().catch(_ => []);
 
     // get first chapter for cover page
     for (let i = 0; i < cs.length; i++) {
         const c = cs[i];
         c.chapters = [await getChapterByNumber(c.id, 1)];
     }
+
+    console.log(cs)
 
     comics.set(cs)
 }
