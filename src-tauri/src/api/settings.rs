@@ -43,7 +43,7 @@ pub async fn select_library<'a, R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
     let mut settings = settings.access().await?;
-    if settings.selected_library.is_some_and(|s| s != id) {
+    if !settings.selected_library.is_some_and(|s| s == id) {
         settings.selected_library = Some(id);
 
         let lib = settings.library().ok_or("Invalid Library id")?.clone();
@@ -107,6 +107,7 @@ pub async fn delete_library<R: tauri::Runtime>(
         (Some(_), None) => {
             let mut lib = library.access_option().await;
             *lib = None;
+            sett.selected_library = None;
             app.emit_all("comics_reloaded", ()).str_err()?;
         }
         _ => (),

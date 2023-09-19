@@ -79,11 +79,10 @@ fn get_comic_page<R: Runtime>(
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let settings = Settings::load_from_config()?;
-    // TODO: handle load when no library is configured
-    let library = library::Library::new(&settings.library().expect("no library").path).await?;
+    let library = LibState::load_from_settings(&settings).await?;
 
     tauri::Builder::default()
-        .manage(LibState::from_lib(library))
+        .manage(library)
         .manage(SettingsState::from_settings(settings))
         .register_uri_scheme_protocol("comic", get_comic_page)
         .invoke_handler(api::get_invoke_handler())

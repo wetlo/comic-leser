@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
-use crate::{library::Library, settings::Settings, util::str_error::StringResult};
+use crate::{
+    library::Library,
+    settings::{LibraryConfig, Settings},
+    util::str_error::StringResult,
+};
 
 mod chapter;
 mod comics;
@@ -25,10 +29,19 @@ impl SettingsState {
 pub struct LibState(Arc<Mutex<Option<Library>>>);
 
 impl LibState {
-    pub fn from_lib(lib: Library) -> Self {
-        LibState(Arc::new(Mutex::new(Some(lib))))
-    }
+    pub async fn load_from_settings(settings: &Settings) -> anyhow::Result<Self> {
+        /*let o = settings
+        .library()
+        .map(async move |l| Library::new(&l.path).await);*/
 
+        let lib = if let Some(&LibraryConfig { ref path, .. }) = settings.library() {
+            Some(Library::new(path).await?)
+        } else {
+            None
+        };
+
+        Ok(Self(Arc::new(Mutex::new(lib))))
+    }
     pub async fn access(&'_ self) -> Result<MappedMutexGuard<'_, Library>, String> {
         let guard = self.0.lock().await;
 
