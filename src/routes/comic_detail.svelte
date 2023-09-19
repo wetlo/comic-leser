@@ -151,7 +151,6 @@
         bottom: 0;
 
         background: rgb(0, 0, 0);
-        /* TODO: improve this gradient maybe */
         background: linear-gradient(
             0deg,
             rgba(0, 0, 0, 1) 0%,

@@ -30,11 +30,7 @@ pub struct LibState(Arc<Mutex<Option<Library>>>);
 
 impl LibState {
     pub async fn load_from_settings(settings: &Settings) -> anyhow::Result<Self> {
-        /*let o = settings
-        .library()
-        .map(async move |l| Library::new(&l.path).await);*/
-
-        let lib = if let Some(&LibraryConfig { ref path, .. }) = settings.library() {
+        let lib = if let Some(LibraryConfig { path, .. }) = settings.library() {
             Some(Library::new(path).await?)
         } else {
             None
@@ -45,9 +41,7 @@ impl LibState {
     pub async fn access(&'_ self) -> Result<MappedMutexGuard<'_, Library>, String> {
         let guard = self.0.lock().await;
 
-        //guard.map(|l| MutexGuard::map(guard, |_| &mut l));
-        //MutexGuard::map(guard, |)
-
+        // convert the Option<Library> type to Result<Guard<Library>>
         MutexGuard::try_map(guard, |l| l.as_mut())
             .map_err(|_| "no library loaded")
             .str_err()

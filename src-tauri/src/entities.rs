@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-//TODO: maybe add insert and get dtos?
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "../src/entities/")]
 pub struct Comic {

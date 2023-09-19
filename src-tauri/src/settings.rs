@@ -49,7 +49,7 @@ impl Settings {
 
         let config = std::fs::read_to_string(config_path).context("Failed reading the config")?;
 
-        Ok(serde_json::from_str(&config).context("config is not in the valid format")?)
+        serde_json::from_str(&config).context("config is not in the valid format")
     }
 
     pub fn library(&'_ self) -> Option<&LibraryConfig> {

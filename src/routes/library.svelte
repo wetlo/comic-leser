@@ -1,19 +1,6 @@
 <script lang="ts">
     import Navbar from "../components/Navbar.svelte";
-    import { getAllComics, getChapterByNumber } from "../api/comic";
     import { comics } from "../store";
-
-    /*async function get_comics() {
-        const cs = await getAllComics();
-
-        for (let i = 0; i < cs.length; i++) {
-            const c = cs[i];
-            c.chapters = [await getChapterByNumber(c.id, 1)];
-        }
-
-        console.log(cs);
-        return cs;
-    }*/
 </script>
 
 <Navbar>
