@@ -23,6 +23,7 @@ use url::Url;
 
 mod api;
 mod db;
+mod differentiation;
 mod directories;
 mod entities;
 mod library;

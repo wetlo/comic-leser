@@ -10,8 +10,8 @@ use itertools::Itertools;
 use tokio::fs::DirEntry;
 use tokio_stream::{Stream, StreamExt};
 
-use crate::db::Database;
 use crate::entities::{Chapter, Comic};
+use crate::{db::Database, differentiation::differentiate_on};
 
 #[derive(Debug)]
 pub struct Library {
@@ -46,17 +46,20 @@ impl Library {
         // TODO: handle deletion
         let scanned_comics = self.scan().await?;
 
-        let mut new_comics = vec![];
-        let mut new_chapters = vec![];
+        let mut new_chapters: Vec<Chapter> = vec![];
+        let mut del_chapters: Vec<Chapter> = vec![];
 
-        for c in scanned_comics {
-            let lib_comic = lib_comics.iter().find(|l| l.dir_path == c.dir_path);
+        let diff_comics = differentiate_on(lib_comics, scanned_comics, |c| &c.dir_path);
+        let mut new_comics = diff_comics.added;
+        let del_comics = diff_comics.deleted;
 
-            if let Some(lib_comic) = lib_comic {
-                new_chapters.extend(self.get_new_chaps_for(lib_comic, c).await?)
-            } else {
-                new_comics.push(c)
-            }
+        for (l, s) in diff_comics.kept {
+            let lchaps = self.database.comic_with_chapters(l.id).await?.chapters;
+
+            let diff_chapters = differentiate_on(lchaps, s.chapters, |c| &c.path);
+
+            new_chapters.extend(diff_chapters.added);
+            del_chapters.extend(diff_chapters.deleted);
         }
 
         // only get the page count when the chapter is new
@@ -67,38 +70,14 @@ impl Library {
                 .len() as u32;
         }
 
-        dbg!(&new_chapters);
+        dbg!(&new_chapters, &new_comics, &del_chapters, &del_comics);
 
         self.database.insert_comics(new_comics).await?; // add the new comics
         self.database.insert_chapters(new_chapters).await?;
+        self.database.delete_comics(del_comics).await?;
+        self.database.delete_chapters(del_chapters).await?;
 
         Ok(())
-    }
-
-    /// compare the db chapters of a comic and the scanned chapter to get the new chapters
-    async fn get_new_chaps_for(&self, lib_comic: &Comic, scanned: Comic) -> Result<Vec<Chapter>> {
-        let db_chaps = self
-            .database
-            .comic_with_chapters(lib_comic.id)
-            .await?
-            .chapters;
-
-        let new = scanned
-            .chapters
-            .into_iter()
-            .filter(|c| {
-                !db_chaps
-                    .iter()
-                    .any(|d| d.path == c.path && c.chapter_number == d.chapter_number)
-            })
-            // add the id of the comic
-            .map(|mut c| {
-                c.comic_id = lib_comic.id;
-                c
-            })
-            .collect_vec();
-
-        Ok(new)
     }
 
     /// scan the comic directory, to get every comic + chapter inside

@@ -22,9 +22,11 @@ const COMIC_QUERY: &str = include_str!("sql/get_comics.sql");
 const COMIC_QUERY_ID: &str = include_str!("sql/get_comic.sql");
 const COMIC_INSERT: &str =
     "INSERT INTO comic (dir_path, name, cover_path, is_manga) VALUES (?1, ?2, ?3, ?4)";
+const COMIC_DELETE: &str = "DELETE FROM comic WHERE id = (?1)";
 
 const CHAPTER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) ORDER BY chapter_number";
+const CHAPTER_DELETE: &str = "DELETE FROM chapter WHERE id = (?1)";
 const CHAPTER_ORDER_QUERY: &str =
     "SELECT id, file_path, chapter_number, read, pages, comic_id, name FROM chapter WHERE comic_id = (?1) AND chapter_number = (?2)";
 // const CHAPTER_INSERT: &str =
@@ -254,6 +256,38 @@ impl Database {
 
                 c.execute(CHAPTER_ORDER_DECREMENT, params![order.comic_id, order.rank])
                     .map(|_| ())
+            })
+            .await
+    }
+
+    pub async fn delete_chapters(&mut self, chapters: Vec<Chapter>) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                let tx = c.transaction()?;
+                let mut delete = tx.prepare(CHAPTER_DELETE)?;
+
+                for c in chapters {
+                    delete.insert(params![c.id])?;
+                }
+                drop(delete);
+                tx.commit()?;
+                Ok(())
+            })
+            .await
+    }
+
+    pub async fn delete_comics(&mut self, comics: Vec<Comic>) -> Result<()> {
+        self.conn
+            .call(move |c| {
+                let tx = c.transaction()?;
+                let mut delete = tx.prepare(COMIC_DELETE)?;
+
+                for c in comics {
+                    delete.insert(params![c.id])?;
+                }
+                drop(delete);
+                tx.commit()?;
+                Ok(())
             })
             .await
     }
