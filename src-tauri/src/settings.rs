@@ -1,8 +1,11 @@
 use anyhow::Context;
-use std::{io::BufWriter, path::PathBuf};
+use std::path::PathBuf;
+use tokio::io::{AsyncWriteExt, BufWriter};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+use crate::directories::DIRECTORIES;
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
 #[ts(export, export_to = "../src/entities/")]
@@ -32,24 +35,32 @@ impl Default for Settings {
 }
 
 impl Settings {
-    // TODO: make this async?
-    pub fn load_from_config() -> anyhow::Result<Self> {
-        let project_dirs = directories::ProjectDirs::from("org", "ang", "comic-leser")
-            .expect("No HOME directory found on OS");
-
-        let config_path = project_dirs.config_dir().join("config.json");
+    pub async fn load_from_config() -> anyhow::Result<Self> {
+        let config_path = DIRECTORIES.config_file_path();
 
         // create default config
         if !config_path.exists() {
-            std::fs::create_dir_all(project_dirs.config_dir())?;
-            let file = std::fs::File::create(&config_path)?;
-            let file = BufWriter::new(file);
-            serde_json::to_writer(file, &Settings::default())?;
+            Self::default().persist().await?;
         }
 
-        let config = std::fs::read_to_string(config_path).context("Failed reading the config")?;
+        let config = tokio::fs::read_to_string(config_path)
+            .await
+            .context("Failed reading the config")?;
 
         serde_json::from_str(&config).context("config is not in the valid format")
+    }
+
+    pub async fn persist(&self) -> anyhow::Result<()> {
+        tokio::fs::create_dir_all(DIRECTORIES.config_dir()).await?;
+        let file = tokio::fs::File::create(DIRECTORIES.config_file_path()).await?;
+        let mut file = BufWriter::new(file);
+        let content = serde_json::to_vec_pretty(&self)?;
+
+        file.write_all(&content)
+            .await
+            .context("can't write config to file")?;
+
+        file.flush().await.context("can't write config to file")
     }
 
     pub fn library(&'_ self) -> Option<&LibraryConfig> {

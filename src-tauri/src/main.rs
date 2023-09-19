@@ -23,6 +23,7 @@ use url::Url;
 
 mod api;
 mod db;
+mod directories;
 mod entities;
 mod library;
 mod settings;
@@ -78,7 +79,7 @@ fn get_comic_page<R: Runtime>(
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let settings = Settings::load_from_config()?;
+    let settings = Settings::load_from_config().await?;
     let library = LibState::load_from_settings(&settings).await?;
 
     tauri::Builder::default()
